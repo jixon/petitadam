@@ -20,7 +20,7 @@ export type GenerateFrenchSentenceInput = z.infer<typeof GenerateFrenchSentenceI
 
 const GenerateFrenchSentenceOutputSchema = z.object({
   sentence: z.string().describe('A simple French sentence suitable for young children (e.g., "Le chat mange.").'),
-  words: z.array(z.string()).describe('The sentence tokenized into words (e.g., ["Le", "chat", "mange."]). Punctuation should be attached to the preceding word.'),
+  words: z.array(z.string()).describe('The sentence tokenized into words (e.g., ["Le", "chat", "mange."]). Punctuation should be attached to the preceding word. Contractions like "n\'est" should be tokenized as ["n\'", "est"].'),
   verbIndices: z.array(z.number()).describe('The 0-based indices of the verb(s) in the `words` array (e.g., for "Le chat mange.", if words is ["Le", "chat", "mange."], verbIndices would be [2]). This should include all parts of a compound verb or verb phrase (e.g., "va manger", "aimons lire").'),
   subjectIndices: z.array(z.number()).describe('The 0-based indices of the subject(s) in the `words` array (e.g., for "Le chat mange.", if words is ["Le", "chat", "mange."], subjectIndices would be [0, 1]). If the subject is implied (e.g., imperative sentences), this can be an empty array.'),
 });
@@ -43,6 +43,7 @@ The sentences must:
 2. Contain a clear subject (explicit or implicit for imperatives) and at least one main verb. The verb can be a single word (e.g., 'mange') or a compound verb phrase (e.g., 'va manger', 'a joué'). For verb + infinitive constructions like 'aimons lire', include both the conjugated verb and the infinitive in the \`verbIndices\`.
 3. Be appropriate for young children (around 5-8 years old).
 4. Punctuation marks (like '.', '!', '?') should be attached to the preceding word in the 'words' array. For example, "joue." is one token, not "joue" and ".".
+5. Contractions: For contractions like "n'est pas" or "l'ami", tokenize them carefully. For example, "n'est pas" should become ["n'", "est", "pas"]. "l'ami" should become ["l'", "ami"].
 
 **Tonic Pronouns and Subjects:**
 Be very careful with tonic pronouns (Moi, Toi, Lui, Elle, Nous, Vous, Eux, Elles).
@@ -51,6 +52,8 @@ Be very careful with tonic pronouns (Moi, Toi, Lui, Elle, Nous, Vous, Eux, Elles
 
 {{#if topic}}
 The sentence should be related to the topic: {{{topic}}}.
+{{else}}
+Please generate a simple and new French sentence suitable for young children. Try to make it different from sentences you may have generated previously.
 {{/if}}
 
 You need to provide the sentence, the sentence tokenized into words, and the 0-based indices for all subject words and all verb words within the tokenized \`words\` array.
@@ -152,12 +155,13 @@ const generateFrenchSentenceFlow = ai.defineFlow(
     if (!output) {
       // Fallback or error handling if AI fails to provide output
       console.error("AI did not return output for generateFrenchSentenceFlow. Input:", input);
-      return {
-        sentence: "Le soleil brille.",
-        words: ["Le", "soleil", "brille."],
-        subjectIndices: [0, 1],
-        verbIndices: [2],
-      };
+      // Return a varied fallback to make it obvious if this is hit repeatedly
+      const fallbacks = [
+        { sentence: "Le soleil brille.", words: ["Le", "soleil", "brille."], subjectIndices: [0, 1], verbIndices: [2] },
+        { sentence: "Le chat joue.", words: ["Le", "chat", "joue."], subjectIndices: [0, 1], verbIndices: [2] },
+        { sentence: "L'oiseau chante.", words: ["L'", "oiseau", "chante."], subjectIndices: [0,1], verbIndices: [2] },
+      ];
+      return fallbacks[Math.floor(Math.random() * fallbacks.length)];
     }
     return output;
   }

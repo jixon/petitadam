@@ -40,9 +40,13 @@ export default function VerbeHeroPage() {
   const fetchNewSentence = useCallback(async () => {
     setStatus('loading');
     setSelectedIndices([]);
-    setShowVerbStepProgress(false); // Reset verb step progress
+    setShowVerbStepProgress(false); 
+    setSentence(''); // Clear old sentence immediately
+    setWords([]);    // Clear old words immediately
     try {
+      console.log("Fetching new sentence...");
       const result = await generateFrenchSentence({});
+      console.log("New sentence data:", result);
       setSentence(result.sentence);
       setWords(result.words);
       setCorrectSubjectIndices(result.subjectIndices);
@@ -50,7 +54,7 @@ export default function VerbeHeroPage() {
       setStatus('asking_verb');
     } catch (error) {
       console.error("Failed to generate sentence:", error);
-      setSentence("Le soleil brille.");
+      setSentence("Le soleil brille."); // Fallback
       setWords(["Le", "soleil", "brille."]);
       setCorrectSubjectIndices([0, 1]);
       setCorrectVerbIndices([2]);
@@ -86,7 +90,7 @@ export default function VerbeHeroPage() {
     let timer: NodeJS.Timeout | undefined;
     if (showVerbStepProgress) {
       setVerbStepProgressValue(0);
-      setSelectedIndices([]); // Clear selections from verb step
+      setSelectedIndices([]); 
       let currentProgress = 0;
       timer = setInterval(() => {
         currentProgress += 20; 
@@ -96,7 +100,7 @@ export default function VerbeHeroPage() {
           setTimeout(() => {
             setShowVerbStepProgress(false);
             setStatus('asking_subject');
-          }, 300); // Short delay after progress full
+          }, 300); 
         } else {
           setVerbStepProgressValue(currentProgress);
         }
@@ -132,7 +136,7 @@ export default function VerbeHeroPage() {
         setShowFireworks(true);
         setTimeout(() => {
           setShowFireworks(false);
-          setShowVerbStepProgress(true); // Trigger verb step progress instead of directly asking_subject
+          setShowVerbStepProgress(true); 
         }, 2500);
       } else {
         setStatus('feedback_incorrect_verb');
@@ -163,6 +167,12 @@ export default function VerbeHeroPage() {
         }, 1500);
       }
     }
+  };
+  
+  const handleRetry = () => {
+    setSelectedIndices([]);
+    if(status === 'feedback_incorrect_verb') setStatus('asking_verb');
+    if(status === 'feedback_incorrect_subject') setStatus('asking_subject');
   };
 
   const getQuestionText = () => {
@@ -195,6 +205,7 @@ export default function VerbeHeroPage() {
 
       <Card className="w-full max-w-3xl shadow-2xl rounded-xl overflow-hidden">
         <CardContent className="p-6 sm:p-8 md:p-10">
+          {/* 1. Question/Feedback Header Area */}
           <div className="mb-6 md:mb-8 min-h-[80px] sm:min-h-[100px] flex flex-col items-center justify-center">
             {status === 'loading' ? (
               <div className="flex flex-col items-center justify-center text-center gap-3 w-full">
@@ -202,27 +213,22 @@ export default function VerbeHeroPage() {
                 <p className="text-lg text-muted-foreground mt-2">{getQuestionText()}</p>
                 <Progress value={loadingProgressValue} className="w-3/4 max-w-xs mt-2" />
               </div>
-            ) : showVerbStepProgress && !showFireworks ? (
-               <div className="flex flex-col items-center justify-center text-center gap-3 w-full">
-                <Brain className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-secondary-foreground">{getQuestionText()}</h2>
-                <Progress value={verbStepProgressValue} className="w-3/4 max-w-xs mt-2" />
-              </div>
             ) : (
               <>
                 <div className="flex items-center text-2xl sm:text-3xl md:text-4xl font-semibold mb-2 text-secondary-foreground">
-                  { (status === 'asking_verb' || status === 'asking_subject') && <Brain className="w-8 h-8 sm:w-10 sm:h-10 mr-3 text-primary" /> }
+                  { (status === 'asking_verb' || status === 'asking_subject' || (showVerbStepProgress && !showFireworks)) && <Brain className="w-8 h-8 sm:w-10 sm:h-10 mr-3 text-primary" /> }
                   { status.startsWith('feedback_incorrect') && <MessageCircleQuestion className="w-8 h-8 sm:w-10 sm:h-10 mr-3 text-destructive" /> }
-                  { status === 'feedback_correct' && <SparklesIcon className="w-8 h-8 sm:w-10 sm:h-10 mr-3 text-accent" /> }
+                  { status === 'feedback_correct' && !showFireworks && <SparklesIcon className="w-8 h-8 sm:w-10 sm:h-10 mr-3 text-accent" /> }
                   <h2>{getQuestionText()}</h2>
                 </div>
-                { isFeedbackIncorrect && <p className="text-destructive text-lg">Essaie encore !</p>}
-                { status === 'feedback_correct' && !showFireworks && <p className="text-accent text-lg">Super !</p>}
+                {isFeedbackIncorrect && <p className="text-destructive text-lg">Essaie encore !</p>}
+                {status === 'feedback_correct' && !showFireworks && !showVerbStepProgress && <p className="text-accent text-lg">Super !</p>}
               </>
             )}
           </div>
           
-          {words.length > 0 && status !== 'loading' && !showVerbStepProgress && (
+          {/* 2. Word Chips Area */}
+          {words.length > 0 && status !== 'loading' && (
             <div 
               className={cn(
                 "flex flex-wrap justify-center items-center gap-2 sm:gap-3 p-4 sm:p-6 mb-6 md:mb-8 min-h-[100px] sm:min-h-[150px] bg-secondary/30 rounded-lg",
@@ -235,45 +241,44 @@ export default function VerbeHeroPage() {
                   word={word}
                   isSelected={selectedIndices.includes(index)}
                   onClick={() => handleWordClick(index)}
-                  disabled={!isSentenceInteractive}
+                  disabled={!isSentenceInteractive || showVerbStepProgress}
                 />
               ))}
             </div>
           )}
-           {(words.length === 0 || status === 'loading' || showVerbStepProgress) && (
+           {/* Placeholder if words not ready AND not in verb step progress */}
+           {(words.length === 0 && status !== 'loading' && !showVerbStepProgress) && (
              <div className="min-h-[100px] sm:min-h-[150px] mb-6 md:mb-8"> {/* Placeholder for word chips area */} </div>
            )}
 
 
-          { status !== 'loading' && !showVerbStepProgress && (status === 'asking_verb' || status === 'asking_subject') && (
-            <Button
-              size="lg"
-              onClick={handleSubmit}
-              disabled={selectedIndices.length === 0 || status === 'loading'}
-              className="w-full sm:w-auto text-2xl sm:text-3xl px-10 py-6 sm:px-12 sm:py-7 rounded-xl shadow-lg transform hover:scale-105 transition-transform duration-200"
-            >
-              Valider
-            </Button>
-          )}
-
-          { status !== 'loading' && !showVerbStepProgress && status.startsWith('feedback_incorrect') && (
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => {
-                if(status === 'feedback_incorrect_verb') setStatus('asking_verb');
-                if(status === 'feedback_incorrect_subject') setStatus('asking_subject');
-              }}
-              className="w-full sm:w-auto text-2xl sm:text-3xl px-10 py-6 sm:px-12 sm:py-7 rounded-xl shadow-lg"
-            >
-              Réessayer
-              <RefreshCw className="ml-2 w-6 h-6" />
-            </Button>
-          )}
-          
-          { (status === 'loading' || showVerbStepProgress) && (
-             <div className="h-[76px]"> {/* Placeholder for button height */} </div>
-          )}
+          {/* 3. Action Area: Buttons OR Verb Step Progress Bar */}
+          <div className="h-[76px] flex items-center justify-center"> {/* Container to ensure consistent height */}
+            {showVerbStepProgress && !showFireworks ? (
+              <div className="w-full flex flex-col items-center">
+                <Progress value={verbStepProgressValue} className="w-3/4 max-w-md" />
+              </div>
+            ) : status !== 'loading' && (status === 'asking_verb' || status === 'asking_subject') ? (
+              <Button
+                size="lg"
+                onClick={handleSubmit}
+                disabled={selectedIndices.length === 0 || status === 'loading'}
+                className="w-full sm:w-auto text-2xl sm:text-3xl px-10 py-6 sm:px-12 sm:py-7 rounded-xl shadow-lg transform hover:scale-105 transition-transform duration-200"
+              >
+                Valider
+              </Button>
+            ) : status !== 'loading' && status.startsWith('feedback_incorrect') ? (
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={handleRetry}
+                className="w-full sm:w-auto text-2xl sm:text-3xl px-10 py-6 sm:px-12 sm:py-7 rounded-xl shadow-lg"
+              >
+                Réessayer
+                <RefreshCw className="ml-2 w-6 h-6" />
+              </Button>
+            ) : null } {/* Placeholder for button height when loading or verb step progress is not active */}
+          </div>
 
         </CardContent>
       </Card>
@@ -307,3 +312,4 @@ function SparklesIcon(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   )
 }
+
