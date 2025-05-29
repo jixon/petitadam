@@ -59,16 +59,17 @@ export default function VerbeHeroPage() {
         if (currentProgress <= 100) {
           setLoadingProgressValue(currentProgress);
         } else {
-          setLoadingProgressValue(100);
+          setLoadingProgressValue(100); // Cap at 100 in case interval runs an extra time
         }
       }, 100);
 
       const result = await generateFrenchSentence({});
+      
       if (progressIntervalId) {
         clearInterval(progressIntervalId);
         progressIntervalId = undefined;
       }
-      setLoadingProgressValue(100);
+      setLoadingProgressValue(100); // Ensure progress is 100%
 
       console.log("New sentence data:", result);
       setSentence(result.sentence);
@@ -76,9 +77,9 @@ export default function VerbeHeroPage() {
       setCorrectSubjectIndices(result.subjectIndices);
       setCorrectVerbIndices(result.verbIndices);
       
-      setTimeout(() => {
-        setStatus('asking_verb');
-      }, 300); 
+      setTimeout(() => { // Short delay to allow user to see 100% progress
+        setStatus('asking_verb'); 
+      }, 300);
 
     } catch (error) {
       console.error("Failed to generate sentence:", error);
@@ -86,14 +87,15 @@ export default function VerbeHeroPage() {
         clearInterval(progressIntervalId);
         progressIntervalId = undefined;
       }
-      setLoadingProgressValue(100); 
+      setLoadingProgressValue(100); // Ensure progress is 100% even on error
 
+      // Fallback sentence
       setSentence("Le soleil brille."); 
       setWords(["Le", "soleil", "brille."]);
       setCorrectSubjectIndices([0, 1]);
       setCorrectVerbIndices([2]);
       
-      setTimeout(() => {
+      setTimeout(() => { // Short delay to allow user to see 100% progress
         setStatus('asking_verb'); 
       }, 300);
     }
@@ -122,7 +124,10 @@ export default function VerbeHeroPage() {
     if (!validateButtonRef.current) return;
 
     const buttonRect = validateButtonRef.current.getBoundingClientRect();
-    const containerRect = validateButtonRef.current.parentElement!.getBoundingClientRect(); // Parent is the relative container
+    // Ensure parentElement exists for getBoundingClientRect
+    const parentElement = validateButtonRef.current.parentElement;
+    if (!parentElement) return;
+    const containerRect = parentElement.getBoundingClientRect();
 
     const startX = buttonRect.left - containerRect.left + buttonRect.width / 2;
     const startY = buttonRect.top - containerRect.top + buttonRect.height / 2;
@@ -132,7 +137,7 @@ export default function VerbeHeroPage() {
     const numParticles = 12;
     for (let i = 0; i < numParticles; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const radius = Math.random() * 40 + 25; // Spread radius
+      const radius = Math.random() * 40 + 25; 
       const particleSize = 6; 
 
       newParticles.push({
@@ -149,7 +154,7 @@ export default function VerbeHeroPage() {
       });
     }
     setButtonParticles(newParticles);
-    setTimeout(() => setButtonParticles([]), 600); // Clear particles after animation
+    setTimeout(() => setButtonParticles([]), 600); 
   };
 
   const handleSubmit = () => {
@@ -230,9 +235,9 @@ export default function VerbeHeroPage() {
       </header>
 
       <Card className={cn(
-        "w-full max-w-3xl shadow-2xl rounded-xl overflow-hidden transition-all duration-300",
-        status === 'loading' && "border-4 border-primary animate-pulse",
-        status !== 'loading' && "border-border"
+        "w-full max-w-3xl shadow-2xl rounded-xl overflow-hidden transition-all duration-300"
+        // Removed: status === 'loading' && "border-4 border-primary animate-pulse",
+        // The card will use its default border (from globals.css & card.tsx) during loading.
         )}>
         <CardContent className="p-6 sm:p-8 md:p-10">
           <div className="mb-6 md:mb-8 min-h-[80px] sm:min-h-[100px] flex flex-col items-center justify-center">
@@ -300,7 +305,7 @@ export default function VerbeHeroPage() {
                 variant="link"
                 className="mt-4 text-muted-foreground text-sm"
                 onClick={() => {
-                  setSelectedIndices([]); // Clear selection before fetching new
+                  setSelectedIndices([]); 
                   fetchNewSentence();
                 }}
                 disabled={status === 'loading'}
