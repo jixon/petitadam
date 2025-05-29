@@ -1,9 +1,11 @@
+
 'use server';
 
 /**
- * @fileOverview Generates French sentences suitable for young children.
+ * @fileOverview Generates French sentences suitable for young children,
+ * along with identified subjects and verbs.
  *
- * - generateFrenchSentence - A function that generates a French sentence.
+ * - generateFrenchSentence - A function that generates a French sentence with grammatical analysis.
  * - GenerateFrenchSentenceInput - The input type for the generateFrenchSentence function.
  * - GenerateFrenchSentenceOutput - The return type for the generateFrenchSentence function.
  */
@@ -17,7 +19,10 @@ const GenerateFrenchSentenceInputSchema = z.object({
 export type GenerateFrenchSentenceInput = z.infer<typeof GenerateFrenchSentenceInputSchema>;
 
 const GenerateFrenchSentenceOutputSchema = z.object({
-  sentence: z.string().describe('A simple French sentence suitable for young children.'),
+  sentence: z.string().describe('A simple French sentence suitable for young children (e.g., "Le chat mange.").'),
+  words: z.array(z.string()).describe('The sentence tokenized into words (e.g., ["Le", "chat", "mange", "."]). Punctuation should be separate tokens.'),
+  verbIndices: z.array(z.number()).describe('The 0-based indices of the verb(s) in the `words` array (e.g., for "Le chat mange.", if words is ["Le", "chat", "mange", "."], verbIndices would be [2]).'),
+  subjectIndices: z.array(z.number()).describe('The 0-based indices of the subject(s) in the `words` array (e.g., for "Le chat mange.", if words is ["Le", "chat", "mange", "."], subjectIndices would be [0, 1]). If the subject is implied (e.g., imperative sentences), this can be an empty array.'),
 });
 export type GenerateFrenchSentenceOutput = z.infer<typeof GenerateFrenchSentenceOutputSchema>;
 
@@ -31,13 +36,74 @@ const prompt = ai.definePrompt({
   name: 'generateFrenchSentencePrompt',
   input: {schema: GenerateFrenchSentenceInputSchema},
   output: {schema: GenerateFrenchSentenceOutputSchema},
-  prompt: `You are a helpful AI assistant specialized in generating simple French sentences for young children. The sentences should contain a clear subject and verb.
+  prompt: `You are an expert French linguist and teacher. Your task is to generate simple French sentences suitable for young children learning about verbs and subjects.
 
-{% if topic %}The sentence should be about the topic: {{{topic}}}.{% endif %}
+The sentences must:
+1. Be grammatically correct and simple.
+2. Contain a clear subject (explicit or implicit for imperatives) and at least one main verb.
+3. Be appropriate for young children (around 5-8 years old).
+4. Punctuation marks (like '.', '!', '?') should be treated as separate tokens in the 'words' array.
 
-Respond with ONLY the sentence.  Do not include any additional explanation or context.  The response must be a single sentence.
+{{#if topic}}
+The sentence should be related to the topic: {{{topic}}}.
+{{/if}}
 
-Sentence:`,
+You need to provide the sentence, the sentence tokenized into words, and the 0-based indices for all subject words and all verb words within the tokenized \`words\` array.
+
+Example 1:
+Input: {}
+Output:
+{
+  "sentence": "Le petit chien joue.",
+  "words": ["Le", "petit", "chien", "joue", "."],
+  "subjectIndices": [0, 1, 2],
+  "verbIndices": [3]
+}
+
+Example 2 (Imperative, implicit subject "tu" or "vous"):
+Input: {}
+Output:
+{
+  "sentence": "Chante une chanson !",
+  "words": ["Chante", "une", "chanson", "!"],
+  "subjectIndices": [],
+  "verbIndices": [0]
+}
+
+Example 3 (Compound verb):
+Input: {}
+Output:
+{
+  "sentence": "Elle va manger.",
+  "words": ["Elle", "va", "manger", "."],
+  "subjectIndices": [0],
+  "verbIndices": [1, 2]
+}
+
+Example 4 (Simple sentence):
+Input: { "topic": "cats" }
+Output:
+{
+  "sentence": "Le chat dort.",
+  "words": ["Le", "chat", "dort", "."],
+  "subjectIndices": [0, 1],
+  "verbIndices": [2]
+}
+
+Example 5 (Sentence with "n'est pas"):
+Input: {}
+Output:
+{
+  "sentence": "Ce n'est pas difficile.",
+  "words": ["Ce", "n'", "est", "pas", "difficile", "."],
+  "subjectIndices": [0],
+  "verbIndices": [2] 
+}
+
+
+Ensure your response strictly adheres to the output schema.
+Only provide the JSON object as specified by the schema.
+`,
 });
 
 const generateFrenchSentenceFlow = ai.defineFlow(
@@ -48,6 +114,18 @@ const generateFrenchSentenceFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    if (!output) {
+      // Fallback or error handling if AI fails to provide output
+      // This is a basic fallback, consider more robust error handling
+      console.error("AI did not return output for generateFrenchSentenceFlow. Input:", input);
+      return {
+        sentence: "Je n'ai pas trouvé de phrase. Essaie encore !",
+        words: ["Je", "n'", "ai", "pas", "trouvé", "de", "phrase", ".", "Essaie", "encore", "!"],
+        subjectIndices: [0],
+        verbIndices: [2,3,4],
+      };
+    }
+    return output;
   }
 );
+

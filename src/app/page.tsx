@@ -1,3 +1,4 @@
+
 // @/app/page.tsx
 "use client";
 
@@ -21,8 +22,8 @@ type GameStatus =
 export default function VerbeHeroPage() {
   const [sentence, setSentence] = useState('');
   const [words, setWords] = useState<string[]>([]);
-  const [mockCorrectVerbIndices, setMockCorrectVerbIndices] = useState<number[]>([]);
-  const [mockCorrectSubjectIndices, setMockCorrectSubjectIndices] = useState<number[]>([]);
+  const [correctVerbIndices, setCorrectVerbIndices] = useState<number[]>([]);
+  const [correctSubjectIndices, setCorrectSubjectIndices] = useState<number[]>([]);
   
   const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
   const [score, setScore] = useState(0);
@@ -34,36 +35,20 @@ export default function VerbeHeroPage() {
     setSelectedIndices([]);
     try {
       const result = await generateFrenchSentence({});
-      const newSentence = result.sentence;
-      setSentence(newSentence);
-      const newWords = newSentence.split(' ').filter(w => w.trim() !== '');
-      setWords(newWords);
-
-      // MOCK LOGIC: This is a placeholder due to AI flow limitations.
-      // In a real scenario, the AI would provide verb/subject information.
-      // For now, let's assume: subject is the first word, verb is the second.
-      // This will be wrong often, but it allows the game flow.
-      if (newWords.length > 0) {
-        setMockCorrectSubjectIndices([0]);
-      } else {
-        setMockCorrectSubjectIndices([]);
-      }
-      if (newWords.length > 1) {
-        setMockCorrectVerbIndices([1]);
-      } else if (newWords.length > 0) { // If only one word, it could be a verb (e.g. "Chante!")
-        setMockCorrectVerbIndices([0]);
-      } else {
-        setMockCorrectVerbIndices([]);
-      }
+      setSentence(result.sentence);
+      setWords(result.words);
+      setCorrectSubjectIndices(result.subjectIndices);
+      setCorrectVerbIndices(result.verbIndices);
       
       setStatus('asking_verb');
     } catch (error) {
       console.error("Failed to generate sentence:", error);
-      // Fallback sentence or error state
       setSentence("Oops! Je n'ai pas pu trouver une phrase. Réessayons!");
-      setWords(["Oops!", "Je", "n'ai", "pas", "pu", "trouver", "une", "phrase.", "Réessayons!"]);
-      setMockCorrectSubjectIndices([1]); // "Je"
-      setMockCorrectVerbIndices([2,3,4]); // "n'ai pas pu trouver"
+      const fallbackWords = ["Oops!", "Je", "n'ai", "pas", "pu", "trouver", "une", "phrase.", "Réessayons!"];
+      setWords(fallbackWords);
+      // Example fallback indices (adjust if AI consistently fails for this specific fallback)
+      setCorrectSubjectIndices([1]); // "Je"
+      setCorrectVerbIndices([2,3,4]); // "n'ai pas pu trouver" (as an example of a verb phrase)
       setStatus('asking_verb');
     }
   }, []);
@@ -80,15 +65,18 @@ export default function VerbeHeroPage() {
     );
   };
 
-  const checkAnswer = (correctIndices: number[]): boolean => {
-    if (selectedIndices.length !== correctIndices.length) return false;
-    return selectedIndices.every(idx => correctIndices.includes(idx));
+  const checkAnswer = (indicesToCheck: number[]): boolean => {
+    if (selectedIndices.length !== indicesToCheck.length) return false;
+    // Ensure all selected indices are in indicesToCheck and vice-versa
+    const sortedSelected = [...selectedIndices].sort((a, b) => a - b);
+    const sortedCorrect = [...indicesToCheck].sort((a, b) => a - b);
+    return sortedSelected.every((val, index) => val === sortedCorrect[index]);
   };
 
   const handleSubmit = () => {
     let isCorrect = false;
     if (status === 'asking_verb') {
-      isCorrect = checkAnswer(mockCorrectVerbIndices);
+      isCorrect = checkAnswer(correctVerbIndices);
       if (isCorrect) {
         setStatus('feedback_correct');
         setShowFireworks(true);
@@ -104,7 +92,7 @@ export default function VerbeHeroPage() {
         }, 1500);
       }
     } else if (status === 'asking_subject') {
-      isCorrect = checkAnswer(mockCorrectSubjectIndices);
+      isCorrect = checkAnswer(correctSubjectIndices);
       if (isCorrect) {
         setStatus('feedback_correct');
         setShowFireworks(true);
@@ -246,3 +234,4 @@ function SparklesIcon(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   )
 }
+
