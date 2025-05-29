@@ -4,7 +4,6 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
-// Removed: import { generateFrenchSentence } from '@/ai/flows/generate-french-sentence';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { WordChip } from '@/components/game/WordChip';
@@ -14,6 +13,7 @@ import { Star, Brain, MessageCircleQuestion, Loader2, RefreshCw, SparklesIcon as
 import { cn } from '@/lib/utils';
 
 type GameStatus = 
+  | 'initial_loading' // New state for when sentences.json is being fetched
   | 'loading' 
   | 'asking_verb' 
   | 'asking_subject' 
@@ -40,8 +40,9 @@ const findPartIndices = (sentenceWords: string[], partToFind: string): number[] 
   for (let i = 0; i <= sentenceWords.length - partWords.length; i++) {
     let match = true;
     for (let j = 0; j < partWords.length; j++) {
-      const sentenceWordClean = sentenceWords[i + j].replace(/[.,!?;:]$/, '');
-      const partWordClean = partWords[j].replace(/[.,!?;:]$/, '');
+      // Normalize words by removing trailing punctuation for comparison
+      const sentenceWordClean = sentenceWords[i + j].replace(/[.,!?;:]$/, '').toLowerCase();
+      const partWordClean = partWords[j].replace(/[.,!?;:]$/, '').toLowerCase();
 
       if (sentenceWordClean !== partWordClean) {
         match = false;
@@ -59,6 +60,9 @@ const fallbackSentences: SentenceData[] = [
   { phrase: "Le chien court vite.", sujet: "Le chien", verbe: "court" },
   { phrase: "Elle dessine un chat.", sujet: "Elle", verbe: "dessine" },
   { phrase: "L'oiseau vole haut.", sujet: "L'oiseau", verbe: "vole" },
+  { phrase: "Le soleil brille fort.", sujet: "Le soleil", verbe: "brille" },
+  { phrase: "Maman prépare le repas.", sujet: "Maman", verbe: "prépare" },
+  { phrase: "L'abeille butine la fleur.", sujet: "L'abeille", verbe: "butine"}
 ];
 
 export default function PetitAdamPage() {
@@ -69,7 +73,7 @@ export default function PetitAdamPage() {
   
   const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
   const [score, setScore] = useState(0);
-  const [status, setStatus] = useState<GameStatus>('loading');
+  const [status, setStatus] = useState<GameStatus>('initial_loading'); // Start with initial_loading
   const [showFireworks, setShowFireworks] = useState(false);
   
   const [loadingProgressValue, setLoadingProgressValue] = useState(0);
@@ -79,22 +83,33 @@ export default function PetitAdamPage() {
   const validateButtonRef = useRef<HTMLButtonElement>(null);
   const [currentQuestionAnimKey, setCurrentQuestionAnimKey] = useState(0);
   const [cashRegisterSound, setCashRegisterSound] = useState<HTMLAudioElement | null>(null);
+  
   const [allSentences, setAllSentences] = useState<SentenceData[]>([]);
   const [lastUsedSentenceIndex, setLastUsedSentenceIndex] = useState<number | null>(null);
+  const [initialSentenceLoaded, setInitialSentenceLoaded] = useState(false);
 
+  // Effect for one-time setup: audio and fetching sentences.json
   useEffect(() => {
     const audio = new Audio('/sounds/cash-register.mp3'); 
     audio.preload = 'auto';
     setCashRegisterSound(audio);
 
-    // Fetch all sentences once on component mount
+    setStatus('initial_loading'); // Explicitly set to initial loading
+    setLoadingProgressValue(0);
+
     fetch('/data/sentences.json')
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
       .then((data: SentenceData[]) => {
         if (data && data.length > 0) {
           setAllSentences(data);
         } else {
-          setAllSentences(fallbackSentences); // Use fallback if JSON is empty or invalid
+          console.warn("Sentences.json is empty or invalid, using fallback.");
+          setAllSentences(fallbackSentences);
         }
       })
       .catch(error => {
@@ -105,53 +120,69 @@ export default function PetitAdamPage() {
     return () => {
       if (audio) {
         audio.pause();
-        // @ts-ignore
-        audio.src = ''; 
+        (audio as any).src = ''; 
       }
     };
-  }, []);
+  }, []); // Empty dependency array means this runs once on mount
 
   const fetchNewSentence = useCallback(async () => {
-    setStatus('loading');
-    setSelectedIndices([]);
-    setSentence('');
-    setWords([]);
-    setLoadingProgressValue(0);
-    
-    // Ensure allSentences is loaded before proceeding
+    // This function should only be called if allSentences is populated.
     if (allSentences.length === 0) {
-      console.log("Sentences not loaded yet, trying again in 100ms");
-      setTimeout(fetchNewSentence, 100); // Retry if sentences aren't loaded
+      console.warn("fetchNewSentence called but allSentences is empty. Waiting for initial load.");
+      setStatus('initial_loading'); // Revert to initial loading if somehow called too early
+      setLoadingProgressValue(0);
       return;
     }
 
+    setStatus('loading'); // Set status to 'loading' for a new sentence
+    setSelectedIndices([]);
+    // Do NOT setSentence('') here to avoid flicker and potential loops. Old sentence stays visible.
+    setWords([]); // Clear words and indices related to the old sentence
+    setCorrectVerbIndices([]);
+    setCorrectSubjectIndices([]);
+    setLoadingProgressValue(0);
+    
     let progressIntervalId: NodeJS.Timeout | undefined = undefined;
+    let currentProgress = 0;
 
     try {
-      currentProgress = 0; // Reset progress for the interval
       progressIntervalId = setInterval(() => {
-        currentProgress += 20; // Faster progress for local fetch
+        currentProgress += 20; 
         if (currentProgress <= 100) {
           setLoadingProgressValue(currentProgress);
         } else {
           setLoadingProgressValue(100); 
         }
-      }, 50); // Faster interval
+      }, 50);
 
       let availableSentences = allSentences;
       if (allSentences.length > 1 && lastUsedSentenceIndex !== null) {
         availableSentences = allSentences.filter((_, index) => index !== lastUsedSentenceIndex);
+        if (availableSentences.length === 0) { // All sentences used except last one, allow reuse
+            availableSentences = allSentences;
+        }
       }
       
       const randomIndex = Math.floor(Math.random() * availableSentences.length);
       const selectedSentenceObject = availableSentences[randomIndex];
       
-      // Find original index in allSentences to store as lastUsedSentenceIndex
       const originalIndex = allSentences.findIndex(s => s.phrase === selectedSentenceObject.phrase);
       setLastUsedSentenceIndex(originalIndex);
 
+      const phraseWords = selectedSentenceObject.phrase.split(' ');
+      // Correctly handle cases like "L'abeille"
+      const currentWords = phraseWords.reduce((acc, word, index, arr) => {
+        if (word.endsWith("'") && index < arr.length - 1) {
+          acc.push(word + arr[index + 1]);
+        } else if (index > 0 && arr[index - 1].endsWith("'")) {
+          // This word was already combined with the previous one
+        } else {
+          acc.push(word);
+        }
+        return acc;
+      }, [] as string[]);
 
-      const currentWords = selectedSentenceObject.phrase.split(' ');
+
       const currentSubjectIndices = findPartIndices(currentWords, selectedSentenceObject.sujet);
       const currentVerbIndices = findPartIndices(currentWords, selectedSentenceObject.verbe);
 
@@ -165,11 +196,11 @@ export default function PetitAdamPage() {
       setWords(currentWords);
       setCorrectSubjectIndices(currentSubjectIndices);
       setCorrectVerbIndices(currentVerbIndices);
-      setCurrentQuestionAnimKey(prevKey => prevKey + 1);
+      setCurrentQuestionAnimKey(prevKey => prevKey + 1); // For wavy animation
       
       setTimeout(() => { 
         setStatus('asking_verb'); 
-      }, 300);
+      }, 300); // Delay to show 100% progress
 
     } catch (error) {
       console.error("Failed to process sentence:", error);
@@ -179,14 +210,25 @@ export default function PetitAdamPage() {
       }
       setLoadingProgressValue(100); 
 
-      // Use a fallback sentence from the hardcoded list
+      // Fallback logic if something goes wrong
       const fallbackSentenceData = fallbackSentences[Math.floor(Math.random() * fallbackSentences.length)];
-      const fallbackWords = fallbackSentenceData.phrase.split(' ');
-      const fallbackSubjectIndices = findPartIndices(fallbackWords, fallbackSentenceData.sujet);
-      const fallbackVerbIndices = findPartIndices(fallbackWords, fallbackSentenceData.verbe);
+      const fallbackWordsArray = fallbackSentenceData.phrase.split(' ');
+       const processedFallbackWords = fallbackWordsArray.reduce((acc, word, index, arr) => {
+        if (word.endsWith("'") && index < arr.length - 1) {
+          acc.push(word + arr[index + 1]);
+        } else if (index > 0 && arr[index - 1].endsWith("'")) {
+          // Skip
+        } else {
+          acc.push(word);
+        }
+        return acc;
+      }, [] as string[]);
+
+      const fallbackSubjectIndices = findPartIndices(processedFallbackWords, fallbackSentenceData.sujet);
+      const fallbackVerbIndices = findPartIndices(processedFallbackWords, fallbackSentenceData.verbe);
 
       setSentence(fallbackSentenceData.phrase); 
-      setWords(fallbackWords);
+      setWords(processedFallbackWords);
       setCorrectSubjectIndices(fallbackSubjectIndices);
       setCorrectVerbIndices(fallbackVerbIndices);
       setCurrentQuestionAnimKey(prevKey => prevKey + 1);
@@ -197,13 +239,13 @@ export default function PetitAdamPage() {
     }
   }, [allSentences, lastUsedSentenceIndex]); 
 
-  let currentProgress = 0; // Hoisted for interval access
-
+  // Effect to load the first sentence once allSentences are populated
   useEffect(() => {
-    if (allSentences.length > 0) { // Only fetch new sentence if allSentences are loaded
-        fetchNewSentence();
+    if (allSentences.length > 0 && !initialSentenceLoaded) {
+      fetchNewSentence();
+      setInitialSentenceLoaded(true);
     }
-  }, [allSentences, fetchNewSentence]); // Rerun if allSentences changes (i.e., on initial load)
+  }, [allSentences, initialSentenceLoaded, fetchNewSentence]);
 
 
   const handleWordClick = (index: number) => {
@@ -216,6 +258,7 @@ export default function PetitAdamPage() {
 
   const checkAnswer = (indicesToCheck: number[]): boolean => {
     if (selectedIndices.length !== indicesToCheck.length) return false;
+    if (indicesToCheck.length === 0 && selectedIndices.length === 0) return true; // Correct for implicit subject/verb
     const sortedSelected = [...selectedIndices].sort((a, b) => a - b);
     const sortedCorrect = [...indicesToCheck].sort((a, b) => a - b);
     return sortedSelected.every((val, index) => val === sortedCorrect[index]);
@@ -260,11 +303,7 @@ export default function PetitAdamPage() {
     triggerButtonAnimation();
     let isCorrect = false;
     if (status === 'asking_verb') {
-      if (correctVerbIndices.length === 0 && selectedIndices.length === 0) { // Correct for implied verb/no verb phrase?
-        isCorrect = true; // Or handle as error if verb is always expected. For now, assume correct if JSON implies no verb.
-      } else {
-        isCorrect = checkAnswer(correctVerbIndices);
-      }
+      isCorrect = checkAnswer(correctVerbIndices);
 
       if (isCorrect) {
         setLastCorrectStage('verb');
@@ -285,15 +324,10 @@ export default function PetitAdamPage() {
         setSelectedIndices([]); 
         setTimeout(() => {
           setStatus('asking_verb'); 
-          // No need to re-trigger wavy animation for same question on error
         }, 1500);
       }
     } else if (status === 'asking_subject') {
-      if (correctSubjectIndices.length === 0 && selectedIndices.length === 0) { // Correct for imperative
-        isCorrect = true;
-      } else {
-        isCorrect = checkAnswer(correctSubjectIndices);
-      }
+      isCorrect = checkAnswer(correctSubjectIndices);
 
       if (isCorrect) {
         setLastCorrectStage('subject');
@@ -305,13 +339,13 @@ export default function PetitAdamPage() {
         }
         setScore(s => s + 10);
         setIsScoreAnimating(true);
-        setTimeout(() => {
-          setIsScoreAnimating(false);
-        }, 300); 
+        setTimeout(() => setIsScoreAnimating(false), 300); 
+        
+        setSelectedIndices([]);
         setTimeout(() => {
           setShowFireworks(false);
-          if (allSentences.length > 0) { // Ensure sentences are loaded before fetching new one
-            fetchNewSentence();
+          if (allSentences.length > 0) { 
+            fetchNewSentence(); // Load new sentence after correct subject
           }
         }, 1500); 
       } else {
@@ -319,13 +353,13 @@ export default function PetitAdamPage() {
         setSelectedIndices([]); 
          setTimeout(() => {
           setStatus('asking_subject');
-          // No need to re-trigger wavy animation for same question on error
         }, 1500);
       }
     }
   };
   
   const getQuestionText = () => {
+    if (status === 'initial_loading') return "Chargement des phrases...";
     if (status === 'loading') return "Je cherche une nouvelle phrase...";
     if (status === 'asking_verb' || status === 'feedback_incorrect_verb') return "Quel est le verbe ?";
     if (status === 'asking_subject' || status === 'feedback_incorrect_subject') return "Quel est le sujet ?";
@@ -343,7 +377,8 @@ export default function PetitAdamPage() {
   const questionText = getQuestionText();
   const mainQuestionVerb = "Quel est le verbe ?";
   const mainQuestionSubject = "Quel est le sujet ?";
-  const shouldApplyWavyAnimation = questionText === mainQuestionVerb || questionText === mainQuestionSubject;
+  const shouldApplyWavyAnimation = (questionText === mainQuestionVerb || questionText === mainQuestionSubject) &&
+                                   (status === 'asking_verb' || status === 'asking_subject');
 
 
   return (
@@ -358,6 +393,7 @@ export default function PetitAdamPage() {
           height={158} 
           className="drop-shadow-md"
           priority
+          data-ai-hint="child education"
         />
         <div className={cn(
           "flex items-center bg-primary text-primary-foreground p-2 sm:p-3 rounded-lg shadow-lg",
@@ -372,7 +408,7 @@ export default function PetitAdamPage() {
       <Card className="w-full max-w-3xl shadow-2xl rounded-xl overflow-hidden transition-all duration-300">
         <CardContent className="p-6 sm:p-8 md:p-10">
           <div className="mb-6 md:mb-8 min-h-[80px] sm:min-h-[100px] flex flex-col items-center justify-center">
-            {status === 'loading' ? (
+            { (status === 'loading' || status === 'initial_loading') ? (
               <div className="flex flex-col items-center justify-center text-center gap-3 w-full">
                 <Loader2 className="w-10 h-10 sm:w-12 sm:h-12 text-primary animate-spin" />
                 <p className="text-lg text-muted-foreground mt-2">{questionText}</p>
@@ -385,11 +421,11 @@ export default function PetitAdamPage() {
                   { isFeedbackIncorrect && <MessageCircleQuestion className="w-8 h-8 sm:w-10 sm:h-10 mr-3 text-destructive" /> }
                   { status === 'feedback_correct' && !showFireworks && <SparklesLucide className="w-8 h-8 sm:w-10 sm:h-10 mr-3 text-accent" /> }
                   
-                  <h2 key={currentQuestionAnimKey}>
+                  <h2 key={currentQuestionAnimKey}> 
                     {shouldApplyWavyAnimation
                       ? questionText.split('').map((char, index) => (
                           <span
-                            key={index}
+                            key={`${char}-${index}`}
                             className="wavy-text-letter"
                             style={{ animationDelay: `${index * 0.05}s` }}
                           >
@@ -406,7 +442,7 @@ export default function PetitAdamPage() {
             )}
           </div>
           
-          {words.length > 0 && status !== 'loading' && (
+          {words.length > 0 && status !== 'loading' && status !== 'initial_loading' && (
             <div 
               className={cn(
                 "flex flex-wrap justify-center items-center gap-2 sm:gap-3 p-4 sm:p-6 mb-6 md:mb-8 min-h-[100px] sm:min-h-[150px] bg-secondary/30 rounded-lg",
@@ -416,7 +452,7 @@ export default function PetitAdamPage() {
             >
               {words.map((word, index) => (
                 <WordChip
-                  key={index}
+                  key={`${word}-${index}`}
                   word={word}
                   isSelected={selectedIndices.includes(index)}
                   onClick={() => handleWordClick(index)}
@@ -425,7 +461,7 @@ export default function PetitAdamPage() {
               ))}
             </div>
           )}
-           {(words.length === 0 && status !== 'loading') && (
+           {(words.length === 0 && status !== 'loading' && status !== 'initial_loading') && (
              <div className="min-h-[100px] sm:min-h-[150px] mb-6 md:mb-8"> </div>
            )}
 
@@ -439,24 +475,24 @@ export default function PetitAdamPage() {
                   ref={validateButtonRef}
                   size="lg"
                   onClick={handleSubmit}
-                  disabled={selectedIndices.length === 0 || status === 'loading'}
+                  disabled={selectedIndices.length === 0 || status === 'loading' || status === 'initial_loading'}
                   className="w-full sm:w-auto text-2xl sm:text-3xl px-10 py-6 sm:px-12 sm:py-7 rounded-xl shadow-lg transform hover:scale-105 transition-transform duration-200"
                 >
                   Valider
                 </Button>
               )}
             </div>
-             {(status !== 'loading' && status !== 'feedback_correct') && (
+             {(status !== 'loading' && status !== 'initial_loading' && status !== 'feedback_correct') && (
               <Button
                 variant="link"
                 className="mt-4 text-muted-foreground text-sm"
                 onClick={() => {
-                  if (status !== 'loading' && allSentences.length > 0) { 
+                  if (status !== 'loading' && status !== 'initial_loading' && allSentences.length > 0) { 
                     setSelectedIndices([]); 
                     fetchNewSentence();
                   }
                 }}
-                disabled={status === 'loading' || allSentences.length === 0}
+                disabled={status === 'loading' || status === 'initial_loading' || allSentences.length === 0}
               >
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Passer / Nouvelle phrase
