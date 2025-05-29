@@ -41,6 +41,7 @@ export default function PetitAdamPage() {
   const [lastCorrectStage, setLastCorrectStage] = useState<'verb' | 'subject' | null>(null);
   const [buttonParticles, setButtonParticles] = useState<ButtonParticle[]>([]);
   const validateButtonRef = useRef<HTMLButtonElement>(null);
+  const [currentQuestionAnimKey, setCurrentQuestionAnimKey] = useState(0);
 
 
   const fetchNewSentence = useCallback(async () => {
@@ -59,8 +60,6 @@ export default function PetitAdamPage() {
         if (currentProgress <= 100) {
           setLoadingProgressValue(currentProgress);
         } else {
-          // Ensure it visually hits 100% but don't clear interval here
-          // as the API call might still be pending.
           setLoadingProgressValue(100); 
         }
       }, 100);
@@ -78,10 +77,11 @@ export default function PetitAdamPage() {
       setWords(result.words);
       setCorrectSubjectIndices(result.subjectIndices);
       setCorrectVerbIndices(result.verbIndices);
+      setCurrentQuestionAnimKey(prevKey => prevKey + 1);
       
       setTimeout(() => { 
         setStatus('asking_verb'); 
-      }, 300); // Brief delay to show 100% progress
+      }, 300);
 
     } catch (error) {
       console.error("Failed to generate sentence:", error);
@@ -91,7 +91,6 @@ export default function PetitAdamPage() {
       }
       setLoadingProgressValue(100); 
 
-      // Use one of the updated fallbacks with correct structure
       const fallbacks = [
         { sentence: "Le chien court vite.", words: ["Le", "chien", "court", "vite."], subjectIndices: [0, 1], verbIndices: [2] },
         { sentence: "Elle dessine un chat.", words: ["Elle", "dessine", "un", "chat."], subjectIndices: [0], verbIndices: [1] },
@@ -99,18 +98,21 @@ export default function PetitAdamPage() {
         { sentence: "Maman prépare le gâteau.", words: ["Maman", "prépare", "le", "gâteau."], subjectIndices: [0], verbIndices: [1]},
         { sentence: "Le chat dort.", words: ["Le", "chat", "dort."], subjectIndices: [0,1], verbIndices: [2]},
         { sentence: "Regarde les étoiles!", words: ["Regarde", "les", "étoiles!"], subjectIndices: [], verbIndices: [0]},
+        { sentence: "L'abeille butine la fleur.", words: ["L'abeille", "butine", "la", "fleur."], subjectIndices: [0], verbIndices: [1]},
+        { sentence: "Nous voulons un gâteau.", words: ["Nous", "voulons", "un", "gâteau."], subjectIndices: [0], verbIndices: [1]},
+
       ];
       const fallbackSentence = fallbacks[Math.floor(Math.random() * fallbacks.length)];
       setSentence(fallbackSentence.sentence); 
       setWords(fallbackSentence.words);
       setCorrectSubjectIndices(fallbackSentence.subjectIndices);
       setCorrectVerbIndices(fallbackSentence.verbIndices);
+      setCurrentQuestionAnimKey(prevKey => prevKey + 1);
       
       setTimeout(() => { 
         setStatus('asking_verb'); 
-      }, 300); // Brief delay
+      }, 300);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); 
 
   useEffect(() => {
@@ -137,7 +139,7 @@ export default function PetitAdamPage() {
 
     const buttonRect = validateButtonRef.current.getBoundingClientRect();
     const parentElement = validateButtonRef.current.parentElement;
-    if (!parentElement) return; // Should not happen if ref is attached
+    if (!parentElement) return; 
     const containerRect = parentElement.getBoundingClientRect();
 
     const startX = buttonRect.left - containerRect.left + buttonRect.width / 2;
@@ -160,11 +162,11 @@ export default function PetitAdamPage() {
           '--tx-btn': `${Math.cos(angle) * radius}px`,
           '--ty-btn': `${Math.sin(angle) * radius}px`,
           animationDelay: `${Math.random() * 0.2}s`,
-        } as React.CSSProperties, // Cast to React.CSSProperties
+        } as React.CSSProperties, 
       });
     }
     setButtonParticles(newParticles);
-    setTimeout(() => setButtonParticles([]), 600); // Particle animation duration
+    setTimeout(() => setButtonParticles([]), 600); 
   };
 
   const handleSubmit = () => {
@@ -180,12 +182,13 @@ export default function PetitAdamPage() {
         setTimeout(() => {
           setShowFireworks(false);
           setStatus('asking_subject'); 
-        }, 1500); // Duration of fireworks + feedback
+          setCurrentQuestionAnimKey(prevKey => prevKey + 1); 
+        }, 1500); 
       } else {
         setStatus('feedback_incorrect_verb');
-        setSelectedIndices([]); // Clear selection on incorrect answer
+        setSelectedIndices([]); 
         setTimeout(() => {
-          setStatus('asking_verb'); // Return to asking verb after feedback
+          setStatus('asking_verb'); 
         }, 1500);
       }
     } else if (status === 'asking_subject') {
@@ -198,16 +201,16 @@ export default function PetitAdamPage() {
         setIsScoreAnimating(true);
         setTimeout(() => {
           setIsScoreAnimating(false);
-        }, 300); // Score animation duration
+        }, 300); 
         setTimeout(() => {
           setShowFireworks(false);
-          fetchNewSentence(); // Fetch new sentence after subject is correct
-        }, 1500); // Duration of fireworks + feedback
+          fetchNewSentence(); 
+        }, 1500); 
       } else {
         setStatus('feedback_incorrect_subject');
-        setSelectedIndices([]); // Clear selection on incorrect answer
+        setSelectedIndices([]); 
          setTimeout(() => {
-          setStatus('asking_subject'); // Return to asking subject after feedback
+          setStatus('asking_subject'); 
         }, 1500);
       }
     }
@@ -266,7 +269,7 @@ export default function PetitAdamPage() {
                   { isFeedbackIncorrect && <MessageCircleQuestion className="w-8 h-8 sm:w-10 sm:h-10 mr-3 text-destructive" /> }
                   { status === 'feedback_correct' && !showFireworks && <SparklesLucide className="w-8 h-8 sm:w-10 sm:h-10 mr-3 text-accent" /> }
                   
-                  <h2 key={questionText + status}> {/* Key to re-trigger animation */}
+                  <h2 key={currentQuestionAnimKey}>
                     {shouldApplyWavyAnimation
                       ? questionText.split('').map((char, index) => (
                           <span
@@ -274,7 +277,7 @@ export default function PetitAdamPage() {
                             className="wavy-text-letter"
                             style={{ animationDelay: `${index * 0.05}s` }}
                           >
-                            {char === ' ' ? '\u00A0' : char} {/* Non-breaking space */}
+                            {char === ' ' ? '\u00A0' : char}
                           </span>
                         ))
                       : questionText
@@ -307,11 +310,11 @@ export default function PetitAdamPage() {
             </div>
           )}
            {(words.length === 0 && status !== 'loading') && (
-             <div className="min-h-[100px] sm:min-h-[150px] mb-6 md:mb-8"> {/* Placeholder for spacing */} </div>
+             <div className="min-h-[100px] sm:min-h-[150px] mb-6 md:mb-8"> </div>
            )}
 
           <div className="h-auto flex flex-col items-center justify-center">
-            <div className="h-[76px] flex items-center justify-center relative w-full sm:w-auto"> {/* Container for button and particles */}
+            <div className="h-[76px] flex items-center justify-center relative w-full sm:w-auto"> 
               {buttonParticles.map(particle => (
                 <div key={particle.id} className="button-particle" style={particle.style} />
               ))}
@@ -327,13 +330,12 @@ export default function PetitAdamPage() {
                 </Button>
               )}
             </div>
-             {/* "Passer / Nouvelle phrase" button always visible unless loading */}
              {(status !== 'loading' && status !== 'feedback_correct') && (
               <Button
                 variant="link"
                 className="mt-4 text-muted-foreground text-sm"
                 onClick={() => {
-                  if (status !== 'loading') { // Double check to prevent race conditions
+                  if (status !== 'loading') { 
                     setSelectedIndices([]); 
                     fetchNewSentence();
                   }
@@ -355,3 +357,4 @@ export default function PetitAdamPage() {
     </div>
   );
 }
+
