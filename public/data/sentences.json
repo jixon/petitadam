@@ -1,0 +1,52 @@
+[
+  {
+    "phrase": "Le petit garçon joue avec sa voiture rouge.",
+    "sujet": "Le petit garçon",
+    "verbe": "joue"
+  },
+  {
+    "phrase": "La maîtresse lit une histoire aux enfants.",
+    "sujet": "La maîtresse",
+    "verbe": "lit"
+  },
+  {
+    "phrase": "Le chat blanc dort sur le canapé du salon.",
+    "sujet": "Le chat blanc",
+    "verbe": "dort"
+  },
+  {
+    "phrase": "Papa prépare un gâteau au chocolat pour le goûter.",
+    "sujet": "Papa",
+    "verbe": "prépare"
+  },
+  {
+    "phrase": "Les oiseaux chantent dans les arbres le matin.",
+    "sujet": "Les oiseaux",
+    "verbe": "chantent"
+  },
+  {
+    "phrase": "Maman regarde la télévision.",
+    "sujet": "Maman",
+    "verbe": "regarde"
+  },
+  {
+    "phrase": "Le chien aboie fort.",
+    "sujet": "Le chien",
+    "verbe": "aboie"
+  },
+  {
+    "phrase": "L'enfant dessine une maison.",
+    "sujet": "L'enfant",
+    "verbe": "dessine"
+  },
+  {
+    "phrase": "Le bébé pleure un peu.",
+    "sujet": "Le bébé",
+    "verbe": "pleure"
+  },
+  {
+    "phrase": "Nous mangeons des pommes.",
+    "sujet": "Nous",
+    "verbe": "mangeons"
+  }
+]

@@ -1,208 +1,474 @@
+// @/app/page.tsx
+"use client";
 
-'use server';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import Image from 'next/image';
+// Removed: import { generateFrenchSentence } from '@/ai/flows/generate-french-sentence';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { WordChip } from '@/components/game/WordChip';
+import { FireworksAnimation } from '@/components/animations/FireworksAnimation';
+import { Progress } from "@/components/ui/progress";
+import { Star, Brain, MessageCircleQuestion, Loader2, RefreshCw, SparklesIcon as SparklesLucide } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-/**
- * @fileOverview Generates French sentences suitable for young children,
- * along with identified subjects and verbs. The sentences will feature a single-word main verb.
- *
- * - generateFrenchSentence - A function that generates a French sentence with grammatical analysis.
- * - GenerateFrenchSentenceInput - The input type for the generateFrenchSentence function.
- * - GenerateFrenchSentenceOutput - The return type for the generateFrenchSentence function.
- */
+type GameStatus = 
+  | 'loading' 
+  | 'asking_verb' 
+  | 'asking_subject' 
+  | 'feedback_correct' 
+  | 'feedback_incorrect_verb' 
+  | 'feedback_incorrect_subject';
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
-
-const GenerateFrenchSentenceInputSchema = z.object({
-  topic: z.string().optional().describe('An optional topic to generate the sentence about.'),
-});
-export type GenerateFrenchSentenceInput = z.infer<typeof GenerateFrenchSentenceInputSchema>;
-
-const GenerateFrenchSentenceOutputSchema = z.object({
-  sentence: z.string().describe('A simple French sentence suitable for young children (e.g., "Le chat mange."). The sentence should be new and different from previous ones if possible, and feature a single-word main verb.'),
-  words: z.array(z.string()).describe('The sentence tokenized into words (e.g., ["Le", "chat", "mange."]). Punctuation should be attached to the preceding word. Elided articles like "L\'abeille" should be a single token.'),
-  verbIndices: z.array(z.number()).describe('The 0-based indices of the single-word main verb in the `words` array (e.g., for "Le chat mange.", if words is ["Le", "chat", "mange."], verbIndices would be [2]). This should only contain one index for the main verb.'),
-  subjectIndices: z.array(z.number()).describe('The 0-based indices of the subject(s) in the `words` array (e.g., for "Le chat mange.", if words is ["Le", "chat", "mange."], subjectIndices would be [0, 1]). If the subject is implied (e.g., imperative sentences like "Regarde!"), this MUST be an empty array.'),
-});
-export type GenerateFrenchSentenceOutput = z.infer<typeof GenerateFrenchSentenceOutputSchema>;
-
-export async function generateFrenchSentence(
-  input: GenerateFrenchSentenceInput
-): Promise<GenerateFrenchSentenceOutput> {
-  return generateFrenchSentenceFlow(input);
+interface ButtonParticle {
+  id: number;
+  style: React.CSSProperties;
 }
 
-const prompt = ai.definePrompt({
-  name: 'generateFrenchSentencePrompt',
-  input: {schema: GenerateFrenchSentenceInputSchema},
-  output: {schema: GenerateFrenchSentenceOutputSchema},
-  prompt: `You are an expert French linguist and teacher. Your task is to generate simple French sentences suitable for young children learning about verbs and subjects. The game will focus on identifying a single-word verb.
-
-The sentences must:
-1. Be grammatically correct and **very simple**, suitable for young children (around 5-8 years old).
-2. Contain a clear subject (unless an imperative sentence) and **one main verb that is a single word** (e.g., "mange", "court", "saute").
-   - **IMPORTANT**: Avoid compound verbs (e.g., "a mangé", "va jouer") and constructions where the verb to be identified by the child would span multiple words (e.g., "aime dessiner"). The game focuses on identifying a single-word action verb.
-3. For imperative sentences (commands) where the subject is implied (e.g., 'Regarde !', 'Chante !'), the \`subjectIndices\` array MUST be empty.
-4. Punctuation marks (like '.', '!', '?') should be attached to the preceding word in the 'words' array. For example, "joue." is one token, not "joue" and ".".
-5. Contractions & Elisions:
-   - For verbal/negation contractions like "n'est pas" or "n'a pas", tokenize the negative particle ("n'") and the verb part separately. Example: "n'est pas" should become ["n'", "est", "pas"]. In "Ce n'est pas", "est" is the verb, so its index in \`words\` will be for the "est" token.
-   - For elided articles (like "l'", "d'", "s'") directly preceding a noun (e.g., "l'ami", "l'abeille", "d'eau"), the article and the noun MUST be tokenized as a SINGLE word. Example: "l'ami" becomes ["l'ami"]. "L'abeille" becomes ["L'abeille"].
-
-**Tonic Pronouns and Subjects:**
-Be very careful with tonic pronouns (Moi, Toi, Lui, Elle, Nous, Vous, Eux, Elles).
-- If a tonic pronoun is used for emphasis alongside a standard subject pronoun (e.g., 'Moi, je mange', 'Toi, tu chantes'), the \`subjectIndices\` should ONLY include the standard subject pronoun (e.g., 'je', 'tu'). The tonic pronoun is for emphasis, not the grammatical subject itself in these cases.
-- If a tonic pronoun is used ALONE as the subject (e.g., in response to a question like 'Qui veut jouer ? Moi !'), then it IS the subject and should be in \`subjectIndices\`.
-
-{{#if topic}}
-The sentence should be related to the topic: {{{topic}}}. Ensure the main verb is a single word and the sentence is new/unique if possible.
-{{else}}
-Please generate a **new and unique** simple French sentence with a **single-word main verb**. Actively try to make it distinct from any sentences you may have generated previously. Avoid common or overly simple phrases if possible, introduce variety while keeping it easy for young children.
-{{/if}}
-
-You need to provide the sentence, the sentence tokenized into words, and the 0-based indices for all subject words and the single main verb word within the tokenized \`words\` array.
-
-Example 1:
-Input: {}
-Output:
-{
-  "sentence": "Le petit chien joue.",
-  "words": ["Le", "petit", "chien", "joue."],
-  "subjectIndices": [0, 1, 2],
-  "verbIndices": [3]
+interface SentenceData {
+  phrase: string;
+  sujet: string;
+  verbe: string;
 }
 
-Example 2 (Imperative, implicit subject, correct handling):
-Input: {}
-Output:
-{
-  "sentence": "Chante une chanson !",
-  "words": ["Chante", "une", "chanson!"],
-  "subjectIndices": [],
-  "verbIndices": [0]
-}
+const findPartIndices = (sentenceWords: string[], partToFind: string): number[] => {
+  if (!partToFind || partToFind.trim() === "") return [];
 
-Example 3 (Elided article, simple subject "L'oiseau"):
-Input: {}
-Output:
-{
-  "sentence": "L'oiseau chante.",
-  "words": ["L'oiseau", "chante."],
-  "subjectIndices": [0],
-  "verbIndices": [1]
-}
+  const partWords = partToFind.split(' ');
+  
+  for (let i = 0; i <= sentenceWords.length - partWords.length; i++) {
+    let match = true;
+    for (let j = 0; j < partWords.length; j++) {
+      const sentenceWordClean = sentenceWords[i + j].replace(/[.,!?;:]$/, '');
+      const partWordClean = partWords[j].replace(/[.,!?;:]$/, '');
 
-Example 4 (Simple sentence):
-Input: { "topic": "cats" }
-Output:
-{
-  "sentence": "Le chat dort.",
-  "words": ["Le", "chat", "dort."],
-  "subjectIndices": [0, 1],
-  "verbIndices": [2]
-}
-
-Example 5 (Sentence with "n'est pas", verb is "est"):
-Input: {}
-Output:
-{
-  "sentence": "Ce n'est pas difficile.",
-  "words": ["Ce", "n'", "est", "pas", "difficile."],
-  "subjectIndices": [0], 
-  "verbIndices": [2] 
-}
-
-Example 6 (Elided article "L'abeille" as subject):
-Input: {}
-Output:
-{
-  "sentence": "L'abeille butine la fleur.",
-  "words": ["L'abeille", "butine", "la", "fleur."],
-  "subjectIndices": [0],
-  "verbIndices": [1]
-}
-
-Example 7 (Tonic pronoun for emphasis with subject pronoun):
-Input: {}
-Output:
-{
-  "sentence": "Moi, je regarde la télé.",
-  "words": ["Moi,", "je", "regarde", "la", "télé."],
-  "subjectIndices": [1],
-  "verbIndices": [2]
-}
-
-Example 8 (Tonic pronoun used alone as subject, simple verb):
-Input: {}
-Output:
-{
-  "sentence": "Qui parle ? Lui.",
-  "words": ["Qui", "parle?", "Lui."],
-  "subjectIndices": [2],
-  "verbIndices": [1]
-}
-
-Example 9 (Imperative with direct object, implicit subject):
-Input: {}
-Output:
-{
-  "sentence": "Regarde le ciel bleu.",
-  "words": ["Regarde", "le", "ciel", "bleu."],
-  "subjectIndices": [],
-  "verbIndices": [0]
-}
-
-Example 10 (Simple verb, direct object):
-Input: {}
-Output:
-{
-  "sentence": "Nous voulons un gâteau.",
-  "words": ["Nous", "voulons", "un", "gâteau."],
-  "subjectIndices": [0],
-  "verbIndices": [1]
-}
-
-Ensure your response strictly adheres to the output schema.
-Only provide the JSON object as specified by the schema.
-The verbIndices array should contain exactly one index for the single-word main verb.
-`,
-});
-
-const generateFrenchSentenceFlow = ai.defineFlow(
-  {
-    name: 'generateFrenchSentenceFlow',
-    inputSchema: GenerateFrenchSentenceInputSchema,
-    outputSchema: GenerateFrenchSentenceOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input);
-    if (!output) {
-      console.error("AI did not return output for generateFrenchSentenceFlow. Input:", input);
-      const fallbacks = [
-        { sentence: "Le chien court vite.", words: ["Le", "chien", "court", "vite."], subjectIndices: [0, 1], verbIndices: [2] },
-        { sentence: "Le chaton miaule.", words: ["Le", "chaton", "miaule."], subjectIndices: [0, 1], verbIndices: [2] },
-        { sentence: "L'oiseau chante.", words: ["L'oiseau", "chante."], subjectIndices: [0], verbIndices: [1] },
-        { sentence: "Elle dessine une fleur.", words: ["Elle", "dessine", "une", "fleur."], subjectIndices: [0], verbIndices: [1]},
-        { sentence: "Tu manges une fraise.", words: ["Tu", "manges", "une", "fraise."], subjectIndices: [0], verbIndices: [1]},
-        { sentence: "Les enfants jouent dehors.", words: ["Les", "enfants", "jouent", "dehors."], subjectIndices: [0,1], verbIndices: [2]},
-        { sentence: "Mon ami lit un livre.", words: ["Mon", "ami", "lit", "un", "livre."], subjectIndices: [0,1], verbIndices: [2]},
-        { sentence: "Le bébé sourit.", words: ["Le", "bébé", "sourit."], subjectIndices: [0,1], verbIndices: [2]},
-        { sentence: "Papa travaille ici.", words: ["Papa", "travaille", "ici."], subjectIndices: [0], verbIndices: [1]},
-        { sentence: "Maman cuisine bien.", words: ["Maman", "cuisine", "bien."], subjectIndices: [0], verbIndices: [1]},
-        { sentence: "L'étoile brille.", words: ["L'étoile", "brille."], subjectIndices: [0], verbIndices: [1]},
-      ];
-      return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+      if (sentenceWordClean !== partWordClean) {
+        match = false;
+        break;
+      }
     }
-    
-    if (!Array.isArray(output.subjectIndices)) {
-        console.warn("AI output.subjectIndices is not an array, defaulting to empty. Output:", output);
-        output.subjectIndices = [];
+    if (match) {
+      return Array.from({ length: partWords.length }, (_, k) => i + k);
     }
-    
-    if (!Array.isArray(output.verbIndices) || output.verbIndices.length !== 1) {
-        console.warn("AI output.verbIndices is not a single-element array, using fallback. Output:", output);
-        return { sentence: "La fleur pousse.", words: ["La", "fleur", "pousse."], subjectIndices: [0, 1], verbIndices: [2] };
-    }
-    return output;
   }
-);
+  return [];
+};
 
+const fallbackSentences: SentenceData[] = [
+  { phrase: "Le chien court vite.", sujet: "Le chien", verbe: "court" },
+  { phrase: "Elle dessine un chat.", sujet: "Elle", verbe: "dessine" },
+  { phrase: "L'oiseau vole haut.", sujet: "L'oiseau", verbe: "vole" },
+];
+
+export default function PetitAdamPage() {
+  const [sentence, setSentence] = useState('');
+  const [words, setWords] = useState<string[]>([]);
+  const [correctVerbIndices, setCorrectVerbIndices] = useState<number[]>([]);
+  const [correctSubjectIndices, setCorrectSubjectIndices] = useState<number[]>([]);
+  
+  const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
+  const [score, setScore] = useState(0);
+  const [status, setStatus] = useState<GameStatus>('loading');
+  const [showFireworks, setShowFireworks] = useState(false);
+  
+  const [loadingProgressValue, setLoadingProgressValue] = useState(0);
+  const [isScoreAnimating, setIsScoreAnimating] = useState(false);
+  const [lastCorrectStage, setLastCorrectStage] = useState<'verb' | 'subject' | null>(null);
+  const [buttonParticles, setButtonParticles] = useState<ButtonParticle[]>([]);
+  const validateButtonRef = useRef<HTMLButtonElement>(null);
+  const [currentQuestionAnimKey, setCurrentQuestionAnimKey] = useState(0);
+  const [cashRegisterSound, setCashRegisterSound] = useState<HTMLAudioElement | null>(null);
+  const [allSentences, setAllSentences] = useState<SentenceData[]>([]);
+  const [lastUsedSentenceIndex, setLastUsedSentenceIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    const audio = new Audio('/sounds/cash-register.mp3'); 
+    audio.preload = 'auto';
+    setCashRegisterSound(audio);
+
+    // Fetch all sentences once on component mount
+    fetch('/data/sentences.json')
+      .then(res => res.json())
+      .then((data: SentenceData[]) => {
+        if (data && data.length > 0) {
+          setAllSentences(data);
+        } else {
+          setAllSentences(fallbackSentences); // Use fallback if JSON is empty or invalid
+        }
+      })
+      .catch(error => {
+        console.error("Failed to fetch sentences.json:", error);
+        setAllSentences(fallbackSentences); // Use fallback on error
+      });
+      
+    return () => {
+      if (audio) {
+        audio.pause();
+        // @ts-ignore
+        audio.src = ''; 
+      }
+    };
+  }, []);
+
+  const fetchNewSentence = useCallback(async () => {
+    setStatus('loading');
+    setSelectedIndices([]);
+    setSentence('');
+    setWords([]);
+    setLoadingProgressValue(0);
+    
+    // Ensure allSentences is loaded before proceeding
+    if (allSentences.length === 0) {
+      console.log("Sentences not loaded yet, trying again in 100ms");
+      setTimeout(fetchNewSentence, 100); // Retry if sentences aren't loaded
+      return;
+    }
+
+    let progressIntervalId: NodeJS.Timeout | undefined = undefined;
+
+    try {
+      currentProgress = 0; // Reset progress for the interval
+      progressIntervalId = setInterval(() => {
+        currentProgress += 20; // Faster progress for local fetch
+        if (currentProgress <= 100) {
+          setLoadingProgressValue(currentProgress);
+        } else {
+          setLoadingProgressValue(100); 
+        }
+      }, 50); // Faster interval
+
+      let availableSentences = allSentences;
+      if (allSentences.length > 1 && lastUsedSentenceIndex !== null) {
+        availableSentences = allSentences.filter((_, index) => index !== lastUsedSentenceIndex);
+      }
+      
+      const randomIndex = Math.floor(Math.random() * availableSentences.length);
+      const selectedSentenceObject = availableSentences[randomIndex];
+      
+      // Find original index in allSentences to store as lastUsedSentenceIndex
+      const originalIndex = allSentences.findIndex(s => s.phrase === selectedSentenceObject.phrase);
+      setLastUsedSentenceIndex(originalIndex);
+
+
+      const currentWords = selectedSentenceObject.phrase.split(' ');
+      const currentSubjectIndices = findPartIndices(currentWords, selectedSentenceObject.sujet);
+      const currentVerbIndices = findPartIndices(currentWords, selectedSentenceObject.verbe);
+
+      if (progressIntervalId) {
+        clearInterval(progressIntervalId);
+        progressIntervalId = undefined;
+      }
+      setLoadingProgressValue(100); 
+
+      setSentence(selectedSentenceObject.phrase);
+      setWords(currentWords);
+      setCorrectSubjectIndices(currentSubjectIndices);
+      setCorrectVerbIndices(currentVerbIndices);
+      setCurrentQuestionAnimKey(prevKey => prevKey + 1);
+      
+      setTimeout(() => { 
+        setStatus('asking_verb'); 
+      }, 300);
+
+    } catch (error) {
+      console.error("Failed to process sentence:", error);
+      if (progressIntervalId) {
+        clearInterval(progressIntervalId);
+        progressIntervalId = undefined;
+      }
+      setLoadingProgressValue(100); 
+
+      // Use a fallback sentence from the hardcoded list
+      const fallbackSentenceData = fallbackSentences[Math.floor(Math.random() * fallbackSentences.length)];
+      const fallbackWords = fallbackSentenceData.phrase.split(' ');
+      const fallbackSubjectIndices = findPartIndices(fallbackWords, fallbackSentenceData.sujet);
+      const fallbackVerbIndices = findPartIndices(fallbackWords, fallbackSentenceData.verbe);
+
+      setSentence(fallbackSentenceData.phrase); 
+      setWords(fallbackWords);
+      setCorrectSubjectIndices(fallbackSubjectIndices);
+      setCorrectVerbIndices(fallbackVerbIndices);
+      setCurrentQuestionAnimKey(prevKey => prevKey + 1);
+      
+      setTimeout(() => { 
+        setStatus('asking_verb'); 
+      }, 300);
+    }
+  }, [allSentences, lastUsedSentenceIndex]); 
+
+  let currentProgress = 0; // Hoisted for interval access
+
+  useEffect(() => {
+    if (allSentences.length > 0) { // Only fetch new sentence if allSentences are loaded
+        fetchNewSentence();
+    }
+  }, [allSentences, fetchNewSentence]); // Rerun if allSentences changes (i.e., on initial load)
+
+
+  const handleWordClick = (index: number) => {
+    if (status !== 'asking_verb' && status !== 'asking_subject') return;
+
+    setSelectedIndices(prev =>
+      prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index].sort((a,b) => a-b)
+    );
+  };
+
+  const checkAnswer = (indicesToCheck: number[]): boolean => {
+    if (selectedIndices.length !== indicesToCheck.length) return false;
+    const sortedSelected = [...selectedIndices].sort((a, b) => a - b);
+    const sortedCorrect = [...indicesToCheck].sort((a, b) => a - b);
+    return sortedSelected.every((val, index) => val === sortedCorrect[index]);
+  };
+
+  const triggerButtonAnimation = () => {
+    if (!validateButtonRef.current) return;
+
+    const buttonRect = validateButtonRef.current.getBoundingClientRect();
+    const parentElement = validateButtonRef.current.parentElement;
+    if (!parentElement) return; 
+    const containerRect = parentElement.getBoundingClientRect();
+
+    const startX = buttonRect.left - containerRect.left + buttonRect.width / 2;
+    const startY = buttonRect.top - containerRect.top + buttonRect.height / 2;
+
+    const newParticles: ButtonParticle[] = [];
+    const numParticles = 12;
+    for (let i = 0; i < numParticles; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = Math.random() * 40 + 25; 
+      const particleSize = 6; 
+
+      newParticles.push({
+        id: Math.random(),
+        style: {
+          left: `${startX - particleSize / 2}px`,
+          top: `${startY - particleSize / 2}px`,
+          width: `${particleSize}px`,
+          height: `${particleSize}px`,
+          '--tx-btn': `${Math.cos(angle) * radius}px`,
+          '--ty-btn': `${Math.sin(angle) * radius}px`,
+          animationDelay: `${Math.random() * 0.2}s`,
+        } as React.CSSProperties, 
+      });
+    }
+    setButtonParticles(newParticles);
+    setTimeout(() => setButtonParticles([]), 600); 
+  };
+
+  const handleSubmit = () => {
+    triggerButtonAnimation();
+    let isCorrect = false;
+    if (status === 'asking_verb') {
+      if (correctVerbIndices.length === 0 && selectedIndices.length === 0) { // Correct for implied verb/no verb phrase?
+        isCorrect = true; // Or handle as error if verb is always expected. For now, assume correct if JSON implies no verb.
+      } else {
+        isCorrect = checkAnswer(correctVerbIndices);
+      }
+
+      if (isCorrect) {
+        setLastCorrectStage('verb');
+        setStatus('feedback_correct');
+        setShowFireworks(true);
+        if (cashRegisterSound) {
+          cashRegisterSound.currentTime = 0; 
+          cashRegisterSound.play().catch(error => console.error("Error playing sound:", error));
+        }
+        setSelectedIndices([]); 
+        setTimeout(() => {
+          setShowFireworks(false);
+          setStatus('asking_subject'); 
+          setCurrentQuestionAnimKey(prevKey => prevKey + 1); 
+        }, 1500); 
+      } else {
+        setStatus('feedback_incorrect_verb');
+        setSelectedIndices([]); 
+        setTimeout(() => {
+          setStatus('asking_verb'); 
+          // No need to re-trigger wavy animation for same question on error
+        }, 1500);
+      }
+    } else if (status === 'asking_subject') {
+      if (correctSubjectIndices.length === 0 && selectedIndices.length === 0) { // Correct for imperative
+        isCorrect = true;
+      } else {
+        isCorrect = checkAnswer(correctSubjectIndices);
+      }
+
+      if (isCorrect) {
+        setLastCorrectStage('subject');
+        setStatus('feedback_correct');
+        setShowFireworks(true);
+        if (cashRegisterSound) {
+          cashRegisterSound.currentTime = 0;
+          cashRegisterSound.play().catch(error => console.error("Error playing sound:", error));
+        }
+        setScore(s => s + 10);
+        setIsScoreAnimating(true);
+        setTimeout(() => {
+          setIsScoreAnimating(false);
+        }, 300); 
+        setTimeout(() => {
+          setShowFireworks(false);
+          if (allSentences.length > 0) { // Ensure sentences are loaded before fetching new one
+            fetchNewSentence();
+          }
+        }, 1500); 
+      } else {
+        setStatus('feedback_incorrect_subject');
+        setSelectedIndices([]); 
+         setTimeout(() => {
+          setStatus('asking_subject');
+          // No need to re-trigger wavy animation for same question on error
+        }, 1500);
+      }
+    }
+  };
+  
+  const getQuestionText = () => {
+    if (status === 'loading') return "Je cherche une nouvelle phrase...";
+    if (status === 'asking_verb' || status === 'feedback_incorrect_verb') return "Quel est le verbe ?";
+    if (status === 'asking_subject' || status === 'feedback_incorrect_subject') return "Quel est le sujet ?";
+    if (status === 'feedback_correct') {
+        if (lastCorrectStage === 'verb') return "Bien joué pour le verbe !";
+        if (lastCorrectStage === 'subject') return "Bravo ! Phrase complète !";
+        return "Bravo ! C'est correct !";
+    }
+    return "Petit Adam";
+  };
+
+  const isSentenceInteractive = status === 'asking_verb' || status === 'asking_subject';
+  const isFeedbackIncorrect = status === 'feedback_incorrect_verb' || status === 'feedback_incorrect_subject';
+
+  const questionText = getQuestionText();
+  const mainQuestionVerb = "Quel est le verbe ?";
+  const mainQuestionSubject = "Quel est le sujet ?";
+  const shouldApplyWavyAnimation = questionText === mainQuestionVerb || questionText === mainQuestionSubject;
+
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8 text-center select-none">
+      {showFireworks && <FireworksAnimation />}
+      
+      <header className="w-full flex justify-between items-center mb-6 md:mb-10">
+        <Image 
+          src="/images/petit-adam-logo.png" 
+          alt="Petit Adam Logo" 
+          width={200}
+          height={158} 
+          className="drop-shadow-md"
+          priority
+        />
+        <div className={cn(
+          "flex items-center bg-primary text-primary-foreground p-2 sm:p-3 rounded-lg shadow-lg",
+          "transition-transform duration-300 ease-in-out",
+          isScoreAnimating && "scale-110"
+        )}>
+          <Star className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-300" />
+          <span className="ml-2 text-2xl sm:text-3xl font-bold">{score}</span>
+        </div>
+      </header>
+
+      <Card className="w-full max-w-3xl shadow-2xl rounded-xl overflow-hidden transition-all duration-300">
+        <CardContent className="p-6 sm:p-8 md:p-10">
+          <div className="mb-6 md:mb-8 min-h-[80px] sm:min-h-[100px] flex flex-col items-center justify-center">
+            {status === 'loading' ? (
+              <div className="flex flex-col items-center justify-center text-center gap-3 w-full">
+                <Loader2 className="w-10 h-10 sm:w-12 sm:h-12 text-primary animate-spin" />
+                <p className="text-lg text-muted-foreground mt-2">{questionText}</p>
+                <Progress value={loadingProgressValue} className="w-3/4 max-w-xs mt-2" />
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center text-2xl sm:text-3xl md:text-4xl font-semibold mb-2 text-secondary-foreground">
+                  { (status === 'asking_verb' || status === 'asking_subject') && <Brain className="w-8 h-8 sm:w-10 sm:h-10 mr-3 text-primary" /> }
+                  { isFeedbackIncorrect && <MessageCircleQuestion className="w-8 h-8 sm:w-10 sm:h-10 mr-3 text-destructive" /> }
+                  { status === 'feedback_correct' && !showFireworks && <SparklesLucide className="w-8 h-8 sm:w-10 sm:h-10 mr-3 text-accent" /> }
+                  
+                  <h2 key={currentQuestionAnimKey}>
+                    {shouldApplyWavyAnimation
+                      ? questionText.split('').map((char, index) => (
+                          <span
+                            key={index}
+                            className="wavy-text-letter"
+                            style={{ animationDelay: `${index * 0.05}s` }}
+                          >
+                            {char === ' ' ? '\u00A0' : char}
+                          </span>
+                        ))
+                      : questionText
+                    }
+                  </h2>
+                </div>
+                {isFeedbackIncorrect && <p className="text-destructive text-lg">Essaie encore !</p>}
+                {status === 'feedback_correct' && !showFireworks && <p className="text-accent text-lg">Super !</p>}
+              </>
+            )}
+          </div>
+          
+          {words.length > 0 && status !== 'loading' && (
+            <div 
+              className={cn(
+                "flex flex-wrap justify-center items-center gap-2 sm:gap-3 p-4 sm:p-6 mb-6 md:mb-8 min-h-[100px] sm:min-h-[150px] bg-secondary/30 rounded-lg",
+                (isFeedbackIncorrect && status === 'feedback_incorrect_verb') && "animate-shake border-2 border-destructive",
+                (isFeedbackIncorrect && status === 'feedback_incorrect_subject') && "animate-shake border-2 border-destructive"
+              )}
+            >
+              {words.map((word, index) => (
+                <WordChip
+                  key={index}
+                  word={word}
+                  isSelected={selectedIndices.includes(index)}
+                  onClick={() => handleWordClick(index)}
+                  disabled={!isSentenceInteractive}
+                />
+              ))}
+            </div>
+          )}
+           {(words.length === 0 && status !== 'loading') && (
+             <div className="min-h-[100px] sm:min-h-[150px] mb-6 md:mb-8"> </div>
+           )}
+
+          <div className="h-auto flex flex-col items-center justify-center">
+            <div className="h-[76px] flex items-center justify-center relative w-full sm:w-auto"> 
+              {buttonParticles.map(particle => (
+                <div key={particle.id} className="button-particle" style={particle.style} />
+              ))}
+              {(status === 'asking_verb' || status === 'asking_subject' || isFeedbackIncorrect) && (
+                <Button
+                  ref={validateButtonRef}
+                  size="lg"
+                  onClick={handleSubmit}
+                  disabled={selectedIndices.length === 0 || status === 'loading'}
+                  className="w-full sm:w-auto text-2xl sm:text-3xl px-10 py-6 sm:px-12 sm:py-7 rounded-xl shadow-lg transform hover:scale-105 transition-transform duration-200"
+                >
+                  Valider
+                </Button>
+              )}
+            </div>
+             {(status !== 'loading' && status !== 'feedback_correct') && (
+              <Button
+                variant="link"
+                className="mt-4 text-muted-foreground text-sm"
+                onClick={() => {
+                  if (status !== 'loading' && allSentences.length > 0) { 
+                    setSelectedIndices([]); 
+                    fetchNewSentence();
+                  }
+                }}
+                disabled={status === 'loading' || allSentences.length === 0}
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Passer / Nouvelle phrase
+              </Button>
+            )}
+          </div>
+
+        </CardContent>
+      </Card>
+
+      <footer className="mt-8 text-sm text-muted-foreground">
+        Appuyez sur les mots pour les sélectionner.
+      </footer>
+    </div>
+  );
+}

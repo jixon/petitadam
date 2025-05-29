@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
-import { generateFrenchSentence } from '@/ai/flows/generate-french-sentence';
+// Removed: import { generateFrenchSentence } from '@/ai/flows/generate-french-sentence';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { WordChip } from '@/components/game/WordChip';
@@ -26,6 +26,41 @@ interface ButtonParticle {
   style: React.CSSProperties;
 }
 
+interface SentenceData {
+  phrase: string;
+  sujet: string;
+  verbe: string;
+}
+
+const findPartIndices = (sentenceWords: string[], partToFind: string): number[] => {
+  if (!partToFind || partToFind.trim() === "") return [];
+
+  const partWords = partToFind.split(' ');
+  
+  for (let i = 0; i <= sentenceWords.length - partWords.length; i++) {
+    let match = true;
+    for (let j = 0; j < partWords.length; j++) {
+      const sentenceWordClean = sentenceWords[i + j].replace(/[.,!?;:]$/, '');
+      const partWordClean = partWords[j].replace(/[.,!?;:]$/, '');
+
+      if (sentenceWordClean !== partWordClean) {
+        match = false;
+        break;
+      }
+    }
+    if (match) {
+      return Array.from({ length: partWords.length }, (_, k) => i + k);
+    }
+  }
+  return [];
+};
+
+const fallbackSentences: SentenceData[] = [
+  { phrase: "Le chien court vite.", sujet: "Le chien", verbe: "court" },
+  { phrase: "Elle dessine un chat.", sujet: "Elle", verbe: "dessine" },
+  { phrase: "L'oiseau vole haut.", sujet: "L'oiseau", verbe: "vole" },
+];
+
 export default function PetitAdamPage() {
   const [sentence, setSentence] = useState('');
   const [words, setWords] = useState<string[]>([]);
@@ -44,13 +79,29 @@ export default function PetitAdamPage() {
   const validateButtonRef = useRef<HTMLButtonElement>(null);
   const [currentQuestionAnimKey, setCurrentQuestionAnimKey] = useState(0);
   const [cashRegisterSound, setCashRegisterSound] = useState<HTMLAudioElement | null>(null);
+  const [allSentences, setAllSentences] = useState<SentenceData[]>([]);
+  const [lastUsedSentenceIndex, setLastUsedSentenceIndex] = useState<number | null>(null);
 
   useEffect(() => {
-    // This effect runs only once on the client after hydration
     const audio = new Audio('/sounds/cash-register.mp3'); 
     audio.preload = 'auto';
     setCashRegisterSound(audio);
 
+    // Fetch all sentences once on component mount
+    fetch('/data/sentences.json')
+      .then(res => res.json())
+      .then((data: SentenceData[]) => {
+        if (data && data.length > 0) {
+          setAllSentences(data);
+        } else {
+          setAllSentences(fallbackSentences); // Use fallback if JSON is empty or invalid
+        }
+      })
+      .catch(error => {
+        console.error("Failed to fetch sentences.json:", error);
+        setAllSentences(fallbackSentences); // Use fallback on error
+      });
+      
     return () => {
       if (audio) {
         audio.pause();
@@ -60,40 +111,60 @@ export default function PetitAdamPage() {
     };
   }, []);
 
-
   const fetchNewSentence = useCallback(async () => {
     setStatus('loading');
     setSelectedIndices([]);
     setSentence('');
     setWords([]);
+    setLoadingProgressValue(0);
+    
+    // Ensure allSentences is loaded before proceeding
+    if (allSentences.length === 0) {
+      console.log("Sentences not loaded yet, trying again in 100ms");
+      setTimeout(fetchNewSentence, 100); // Retry if sentences aren't loaded
+      return;
+    }
+
     let progressIntervalId: NodeJS.Timeout | undefined = undefined;
 
     try {
-      console.log("Fetching new sentence...");
-      setLoadingProgressValue(0);
-      let currentProgress = 0;
+      currentProgress = 0; // Reset progress for the interval
       progressIntervalId = setInterval(() => {
-        currentProgress += 10;
+        currentProgress += 20; // Faster progress for local fetch
         if (currentProgress <= 100) {
           setLoadingProgressValue(currentProgress);
         } else {
           setLoadingProgressValue(100); 
         }
-      }, 100);
+      }, 50); // Faster interval
 
-      const result = await generateFrenchSentence({});
+      let availableSentences = allSentences;
+      if (allSentences.length > 1 && lastUsedSentenceIndex !== null) {
+        availableSentences = allSentences.filter((_, index) => index !== lastUsedSentenceIndex);
+      }
       
+      const randomIndex = Math.floor(Math.random() * availableSentences.length);
+      const selectedSentenceObject = availableSentences[randomIndex];
+      
+      // Find original index in allSentences to store as lastUsedSentenceIndex
+      const originalIndex = allSentences.findIndex(s => s.phrase === selectedSentenceObject.phrase);
+      setLastUsedSentenceIndex(originalIndex);
+
+
+      const currentWords = selectedSentenceObject.phrase.split(' ');
+      const currentSubjectIndices = findPartIndices(currentWords, selectedSentenceObject.sujet);
+      const currentVerbIndices = findPartIndices(currentWords, selectedSentenceObject.verbe);
+
       if (progressIntervalId) {
         clearInterval(progressIntervalId);
         progressIntervalId = undefined;
       }
       setLoadingProgressValue(100); 
 
-      console.log("New sentence data:", result);
-      setSentence(result.sentence);
-      setWords(result.words);
-      setCorrectSubjectIndices(result.subjectIndices);
-      setCorrectVerbIndices(result.verbIndices);
+      setSentence(selectedSentenceObject.phrase);
+      setWords(currentWords);
+      setCorrectSubjectIndices(currentSubjectIndices);
+      setCorrectVerbIndices(currentVerbIndices);
       setCurrentQuestionAnimKey(prevKey => prevKey + 1);
       
       setTimeout(() => { 
@@ -101,40 +172,39 @@ export default function PetitAdamPage() {
       }, 300);
 
     } catch (error) {
-      console.error("Failed to generate sentence:", error);
+      console.error("Failed to process sentence:", error);
       if (progressIntervalId) {
         clearInterval(progressIntervalId);
         progressIntervalId = undefined;
       }
       setLoadingProgressValue(100); 
 
-      const fallbacks = [
-        { sentence: "Le chien court vite.", words: ["Le", "chien", "court", "vite."], subjectIndices: [0, 1], verbIndices: [2] },
-        { sentence: "Elle dessine un chat.", words: ["Elle", "dessine", "un", "chat."], subjectIndices: [0], verbIndices: [1] },
-        { sentence: "L'oiseau vole haut.", words: ["L'oiseau", "vole", "haut."], subjectIndices: [0], verbIndices: [1] },
-        { sentence: "Maman prépare le gâteau.", words: ["Maman", "prépare", "le", "gâteau."], subjectIndices: [0], verbIndices: [1]},
-        { sentence: "Le chat dort.", words: ["Le", "chat", "dort."], subjectIndices: [0,1], verbIndices: [2]},
-        { sentence: "Regarde les étoiles!", words: ["Regarde", "les", "étoiles!"], subjectIndices: [], verbIndices: [0]},
-        { sentence: "L'abeille butine la fleur.", words: ["L'abeille", "butine", "la", "fleur."], subjectIndices: [0], verbIndices: [1]},
-        { sentence: "Nous voulons un gâteau.", words: ["Nous", "voulons", "un", "gâteau."], subjectIndices: [0], verbIndices: [1]},
+      // Use a fallback sentence from the hardcoded list
+      const fallbackSentenceData = fallbackSentences[Math.floor(Math.random() * fallbackSentences.length)];
+      const fallbackWords = fallbackSentenceData.phrase.split(' ');
+      const fallbackSubjectIndices = findPartIndices(fallbackWords, fallbackSentenceData.sujet);
+      const fallbackVerbIndices = findPartIndices(fallbackWords, fallbackSentenceData.verbe);
 
-      ];
-      const fallbackSentence = fallbacks[Math.floor(Math.random() * fallbacks.length)];
-      setSentence(fallbackSentence.sentence); 
-      setWords(fallbackSentence.words);
-      setCorrectSubjectIndices(fallbackSentence.subjectIndices);
-      setCorrectVerbIndices(fallbackSentence.verbIndices);
+      setSentence(fallbackSentenceData.phrase); 
+      setWords(fallbackWords);
+      setCorrectSubjectIndices(fallbackSubjectIndices);
+      setCorrectVerbIndices(fallbackVerbIndices);
       setCurrentQuestionAnimKey(prevKey => prevKey + 1);
       
       setTimeout(() => { 
         setStatus('asking_verb'); 
       }, 300);
     }
-  }, []); 
+  }, [allSentences, lastUsedSentenceIndex]); 
+
+  let currentProgress = 0; // Hoisted for interval access
 
   useEffect(() => {
-    fetchNewSentence();
-  }, [fetchNewSentence]);
+    if (allSentences.length > 0) { // Only fetch new sentence if allSentences are loaded
+        fetchNewSentence();
+    }
+  }, [allSentences, fetchNewSentence]); // Rerun if allSentences changes (i.e., on initial load)
+
 
   const handleWordClick = (index: number) => {
     if (status !== 'asking_verb' && status !== 'asking_subject') return;
@@ -190,7 +260,12 @@ export default function PetitAdamPage() {
     triggerButtonAnimation();
     let isCorrect = false;
     if (status === 'asking_verb') {
-      isCorrect = checkAnswer(correctVerbIndices);
+      if (correctVerbIndices.length === 0 && selectedIndices.length === 0) { // Correct for implied verb/no verb phrase?
+        isCorrect = true; // Or handle as error if verb is always expected. For now, assume correct if JSON implies no verb.
+      } else {
+        isCorrect = checkAnswer(correctVerbIndices);
+      }
+
       if (isCorrect) {
         setLastCorrectStage('verb');
         setStatus('feedback_correct');
@@ -210,10 +285,16 @@ export default function PetitAdamPage() {
         setSelectedIndices([]); 
         setTimeout(() => {
           setStatus('asking_verb'); 
+          // No need to re-trigger wavy animation for same question on error
         }, 1500);
       }
     } else if (status === 'asking_subject') {
-      isCorrect = checkAnswer(correctSubjectIndices);
+      if (correctSubjectIndices.length === 0 && selectedIndices.length === 0) { // Correct for imperative
+        isCorrect = true;
+      } else {
+        isCorrect = checkAnswer(correctSubjectIndices);
+      }
+
       if (isCorrect) {
         setLastCorrectStage('subject');
         setStatus('feedback_correct');
@@ -229,13 +310,16 @@ export default function PetitAdamPage() {
         }, 300); 
         setTimeout(() => {
           setShowFireworks(false);
-          fetchNewSentence(); 
+          if (allSentences.length > 0) { // Ensure sentences are loaded before fetching new one
+            fetchNewSentence();
+          }
         }, 1500); 
       } else {
         setStatus('feedback_incorrect_subject');
         setSelectedIndices([]); 
          setTimeout(() => {
-          setStatus('asking_subject'); 
+          setStatus('asking_subject');
+          // No need to re-trigger wavy animation for same question on error
         }, 1500);
       }
     }
@@ -270,10 +354,10 @@ export default function PetitAdamPage() {
         <Image 
           src="/images/petit-adam-logo.png" 
           alt="Petit Adam Logo" 
-          width={200}  // Adjust as needed, maintaining aspect ratio
-          height={158} // (373/470)*200 ~ 158
+          width={200}
+          height={158} 
           className="drop-shadow-md"
-          priority // Load logo quickly
+          priority
         />
         <div className={cn(
           "flex items-center bg-primary text-primary-foreground p-2 sm:p-3 rounded-lg shadow-lg",
@@ -367,12 +451,12 @@ export default function PetitAdamPage() {
                 variant="link"
                 className="mt-4 text-muted-foreground text-sm"
                 onClick={() => {
-                  if (status !== 'loading') { 
+                  if (status !== 'loading' && allSentences.length > 0) { 
                     setSelectedIndices([]); 
                     fetchNewSentence();
                   }
                 }}
-                disabled={status === 'loading'}
+                disabled={status === 'loading' || allSentences.length === 0}
               >
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Passer / Nouvelle phrase
@@ -389,4 +473,3 @@ export default function PetitAdamPage() {
     </div>
   );
 }
-
