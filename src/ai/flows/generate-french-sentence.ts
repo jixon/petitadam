@@ -44,6 +44,11 @@ The sentences must:
 3. Be appropriate for young children (around 5-8 years old).
 4. Punctuation marks (like '.', '!', '?') should be attached to the preceding word in the 'words' array. For example, "joue." is one token, not "joue" and ".".
 
+**Tonic Pronouns and Subjects:**
+Be very careful with tonic pronouns (Moi, Toi, Lui, Elle, Nous, Vous, Eux, Elles).
+- If a tonic pronoun is used for emphasis alongside a standard subject pronoun (e.g., 'Moi, je mange', 'Toi, tu chantes'), the \`subjectIndices\` should ONLY include the standard subject pronoun (e.g., 'je', 'tu'). The tonic pronoun is for emphasis, not the grammatical subject itself in these cases.
+- If a tonic pronoun is used ALONE as the subject (e.g., in response to a question like 'Qui veut jouer ? Moi !'), then it IS the subject and should be in \`subjectIndices\`.
+
 {{#if topic}}
 The sentence should be related to the topic: {{{topic}}}.
 {{/if}}
@@ -96,7 +101,7 @@ Output:
 {
   "sentence": "Ce n'est pas difficile.",
   "words": ["Ce", "n'", "est", "pas", "difficile."],
-  "subjectIndices": [0],
+  "subjectIndices": [0], 
   "verbIndices": [2] 
 }
 
@@ -109,6 +114,27 @@ Output:
   "subjectIndices": [0],
   "verbIndices": [1, 2]
 }
+
+Example 7 (Tonic pronoun for emphasis with subject pronoun):
+Input: {}
+Output:
+{
+  "sentence": "Moi, je regarde la télé.",
+  "words": ["Moi,", "je", "regarde", "la", "télé."],
+  "subjectIndices": [1],
+  "verbIndices": [2]
+}
+
+Example 8 (Tonic pronoun used alone as subject):
+Input: {}
+Output:
+{
+  "sentence": "Qui a dit ça ? Eux.",
+  "words": ["Qui", "a", "dit", "ça?", "Eux."],
+  "subjectIndices": [4],
+  "verbIndices": [1,2]
+}
+
 
 Ensure your response strictly adheres to the output schema.
 Only provide the JSON object as specified by the schema.
