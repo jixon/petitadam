@@ -96,7 +96,7 @@ export default function PetitAdamPage() {
     const failAudio = new Audio('/sounds/error-sound.mp3');
     failAudio.preload = 'auto';
     setErrorSound(failAudio);
-    console.log('DEBUG: Error sound object initialized:', failAudio); // DEBUG LOG ADDED
+    console.log('DEBUG: Error sound object initialized:', failAudio); // Vérification de l'initialisation
 
     setStatus('initial_loading');
     setLoadingProgressValue(0);
@@ -134,24 +134,25 @@ export default function PetitAdamPage() {
     return () => {
       if (successAudio) {
         successAudio.pause();
-        // successAudio.src = ''; // Avoid issues with source resetting
       }
       if (failAudio) {
         failAudio.pause();
-        // failAudio.src = ''; // Avoid issues with source resetting
       }
     };
   }, []);
 
   const processPhrase = (phrase: string): string[] => {
+    // Logique pour traiter "L'abeille" comme un seul mot
+    // L'idée est de repérer "l'", "d'", "s'", "qu'" et de les joindre au mot suivant.
     const rawWords = phrase.split(' ');
     const processedWords: string[] = [];
     let i = 0;
     while (i < rawWords.length) {
       const currentWord = rawWords[i];
+      // Regex pour les articles élidés communs et "qu'"
       if (/^(l'|d'|s'|qu')$/i.test(currentWord) && i + 1 < rawWords.length) {
         processedWords.push(currentWord + rawWords[i+1]);
-        i += 2;
+        i += 2; // Avancer de deux mots (l'article + le nom)
       } else {
         processedWords.push(currentWord);
         i += 1;
@@ -163,14 +164,15 @@ export default function PetitAdamPage() {
 
   const fetchNewSentence = useCallback(async () => {
     if (allSentences.length === 0) {
-      setStatus('initial_loading'); // Should be handled by useEffect dependency on allSentences
-      setLoadingProgressValue(0);
-      console.warn("fetchNewSentence called before allSentences were loaded. Retrying is handled by useEffect.");
+      // Cet état devrait être géré par le useEffect qui attend que allSentences soit chargé.
+      // On ne fait rien ici si les phrases ne sont pas encore là.
+      console.warn("fetchNewSentence called before allSentences were loaded. This should be handled by useEffect.");
       return;
     }
 
     setStatus('loading');
     setSelectedIndices([]);
+    // Ne pas faire setSentence('') ici pour éviter des re-render inutiles et potentiels
     setWords([]);
     setCorrectVerbIndices([]);
     setCorrectSubjectIndices([]);
@@ -190,16 +192,18 @@ export default function PetitAdamPage() {
       }, 50);
 
       let availableSentences = allSentences;
+      // S'il y a plus d'une phrase et qu'on a une phrase précédente, on essaie de ne pas la répéter
       if (allSentences.length > 1 && lastUsedSentenceIndex !== null) {
         availableSentences = allSentences.filter((_, index) => index !== lastUsedSentenceIndex);
-        if (availableSentences.length === 0) { 
-            availableSentences = allSentences;
+        if (availableSentences.length === 0) { // Si on a filtré toutes les phrases (cas où il n'y en avait que 2 et on a utilisé les deux)
+            availableSentences = allSentences; // On réutilise toutes les phrases
         }
       }
 
       const randomIndex = Math.floor(Math.random() * availableSentences.length);
       const selectedSentenceObject = availableSentences[randomIndex];
 
+      // Trouver l'index original dans allSentences pour le stocker comme lastUsedSentenceIndex
       const originalIndex = allSentences.findIndex(s => s.phrase === selectedSentenceObject.phrase);
       setLastUsedSentenceIndex(originalIndex);
 
@@ -212,17 +216,17 @@ export default function PetitAdamPage() {
         clearInterval(progressIntervalId);
         progressIntervalId = undefined;
       }
-      setLoadingProgressValue(100);
+      setLoadingProgressValue(100); // S'assurer que la barre est pleine
 
-      setSentence(selectedSentenceObject.phrase); 
-      setWords(currentWords); 
+      setSentence(selectedSentenceObject.phrase); // Mettre à jour la phrase affichée
+      setWords(currentWords); // Mettre à jour les mots pour l'affichage
       setCorrectSubjectIndices(currentSubjectIndices);
       setCorrectVerbIndices(currentVerbIndices);
-      setCurrentQuestionAnimKey(prevKey => prevKey + 1); 
+      setCurrentQuestionAnimKey(prevKey => prevKey + 1); // Pour l'animation wavy text
 
       setTimeout(() => {
         setStatus('asking_verb');
-      }, 300); 
+      }, 300); // Petit délai pour voir la barre pleine
 
     } catch (error) {
       console.error("Failed to process sentence:", error);
@@ -230,8 +234,9 @@ export default function PetitAdamPage() {
         clearInterval(progressIntervalId);
         progressIntervalId = undefined;
       }
-      setLoadingProgressValue(100);
+      setLoadingProgressValue(100); // S'assurer que la barre est pleine
 
+      // Utiliser une phrase de secours en cas d'erreur
       const fallbackSentenceData = fallbackSentences[Math.floor(Math.random() * fallbackSentences.length)];
       const processedFallbackWords = processPhrase(fallbackSentenceData.phrase);
       const fallbackSubjectIndices = findPartIndices(processedFallbackWords, fallbackSentenceData.sujet);
@@ -247,12 +252,13 @@ export default function PetitAdamPage() {
         setStatus('asking_verb');
       }, 300);
     }
-  }, [allSentences, lastUsedSentenceIndex]); 
+  }, [allSentences, lastUsedSentenceIndex]); // Dépend de allSentences et lastUsedSentenceIndex
 
+  // useEffect pour charger la première phrase une fois que allSentences est disponible
   useEffect(() => {
     if (allSentences.length > 0 && !initialSentenceLoaded) {
       fetchNewSentence();
-      setInitialSentenceLoaded(true); 
+      setInitialSentenceLoaded(true); // Marquer que la phrase initiale a été chargée
     }
   }, [allSentences, initialSentenceLoaded, fetchNewSentence]);
 
@@ -267,6 +273,7 @@ export default function PetitAdamPage() {
 
   const checkAnswer = (indicesToCheck: number[]): boolean => {
     if (selectedIndices.length !== indicesToCheck.length) return false;
+    // Cas spécial pour les phrases impératives où le sujet est implicite (indicesToCheck est vide)
     if (indicesToCheck.length === 0 && selectedIndices.length === 0) return true;
     const sortedSelected = [...selectedIndices].sort((a, b) => a - b);
     const sortedCorrect = [...indicesToCheck].sort((a, b) => a - b);
@@ -278,18 +285,18 @@ export default function PetitAdamPage() {
 
     const buttonRect = validateButtonRef.current.getBoundingClientRect();
     const parentElement = validateButtonRef.current.parentElement;
-    if (!parentElement) return;
+    if (!parentElement) return; // Early exit if parent is not available
     const containerRect = parentElement.getBoundingClientRect();
 
     const startX = buttonRect.left - containerRect.left + buttonRect.width / 2;
     const startY = buttonRect.top - containerRect.top + buttonRect.height / 2;
 
     const newParticles: ButtonParticle[] = [];
-    const numParticles = 12;
+    const numParticles = 12; // Nombre de particules pour l'animation du bouton
     for (let i = 0; i < numParticles; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const radius = Math.random() * 40 + 25;
-      const particleSize = 6;
+      const radius = Math.random() * 40 + 25; // Distance de dispersion
+      const particleSize = 6; // Taille des particules
 
       newParticles.push({
         id: Math.random(),
@@ -300,12 +307,12 @@ export default function PetitAdamPage() {
           height: `${particleSize}px`,
           '--tx-btn': `${Math.cos(angle) * radius}px`,
           '--ty-btn': `${Math.sin(angle) * radius}px`,
-          animationDelay: `${Math.random() * 0.2}s`,
-        } as React.CSSProperties,
+          animationDelay: `${Math.random() * 0.2}s`, // Délai d'animation aléatoire
+        } as React.CSSProperties, // Cast en React.CSSProperties pour inclure les variables CSS
       });
     }
     setButtonParticles(newParticles);
-    setTimeout(() => setButtonParticles([]), 600);
+    setTimeout(() => setButtonParticles([]), 600); // Durée de l'animation des particules
   };
 
   const handleSubmit = () => {
@@ -319,25 +326,26 @@ export default function PetitAdamPage() {
         setStatus('feedback_correct');
         setShowFireworks(true);
         if (cashRegisterSound) {
-          cashRegisterSound.currentTime = 0;
+          cashRegisterSound.currentTime = 0; // Rembobiner au début
           cashRegisterSound.play().catch(error => console.error("Error playing sound:", error));
         }
-        setSelectedIndices([]);
+        setSelectedIndices([]); // Vider la sélection pour la prochaine étape
         setTimeout(() => {
           setShowFireworks(false);
-          setStatus('asking_subject');
-          setCurrentQuestionAnimKey(prevKey => prevKey + 1); 
-        }, 1500);
+          setStatus('asking_subject'); // Passer à la question du sujet
+          setCurrentQuestionAnimKey(prevKey => prevKey + 1); // Pour l'animation wavy text
+        }, 1500); // Durée des feux d'artifice
       } else {
         setStatus('feedback_incorrect_verb');
-        console.log('DEBUG: Attempting to play error sound (verb):', errorSound); // DEBUG LOG RE-ADDED
+        console.log('DEBUG: Attempting to play error sound (verb):', errorSound); // LOG DE DÉBOGAGE
         if (errorSound) {
           errorSound.currentTime = 0;
           errorSound.play().catch(error => console.error("DEBUG: Error playing error sound (verb):", error));
         }
-        setSelectedIndices([]);
+        setSelectedIndices([]); // Vider la sélection après une erreur
         setTimeout(() => {
-          setStatus('asking_verb');
+          setStatus('asking_verb'); // Revenir à la question du verbe (même phrase)
+          // Ne pas changer currentQuestionAnimKey ici pour ne pas relancer l'animation wavy
         }, 1500);
       }
     } else if (status === 'asking_subject') {
@@ -353,30 +361,31 @@ export default function PetitAdamPage() {
         }
         setScore(s => s + 10);
         setIsScoreAnimating(true);
-        setTimeout(() => setIsScoreAnimating(false), 300);
+        setTimeout(() => setIsScoreAnimating(false), 300); // Durée de l'animation du score
 
-        setSelectedIndices([]);
+        setSelectedIndices([]); // Vider la sélection
         setTimeout(() => {
           setShowFireworks(false);
-          if (allSentences.length > 0) { 
-            fetchNewSentence(); 
+          if (allSentences.length > 0) { // S'assurer que les phrases sont chargées
+            fetchNewSentence(); // Chercher une nouvelle phrase
           }
-        }, 1500);
+        }, 1500); // Durée des feux d'artifice
       } else {
         setStatus('feedback_incorrect_subject');
-        console.log('DEBUG: Attempting to play error sound (subject):', errorSound); // DEBUG LOG RE-ADDED
+        console.log('DEBUG: Attempting to play error sound (subject):', errorSound); // LOG DE DÉBOGAGE
         if (errorSound) {
           errorSound.currentTime = 0;
           errorSound.play().catch(error => console.error("DEBUG: Error playing error sound (subject):", error));
         }
-        setSelectedIndices([]);
+        setSelectedIndices([]); // Vider la sélection
          setTimeout(() => {
-          setStatus('asking_subject');
+          setStatus('asking_subject'); // Revenir à la question du sujet (même phrase)
+          // Ne pas changer currentQuestionAnimKey ici
         }, 1500);
       }
     }
   };
-
+  
   const getQuestionText = () => {
     if (status === 'initial_loading') return "Chargement des phrases...";
     if (status === 'loading') return "Je cherche une nouvelle phrase...";
@@ -387,7 +396,7 @@ export default function PetitAdamPage() {
         if (lastCorrectStage === 'subject') return "Bravo ! Phrase complète !";
         return "Bravo ! C'est correct !";
     }
-    return "Petit Adam";
+    return "Petit Adam"; // Titre par défaut ou si aucun statut ne correspond
   };
 
   const isSentenceInteractive = status === 'asking_verb' || status === 'asking_subject';
@@ -396,6 +405,8 @@ export default function PetitAdamPage() {
   const questionText = getQuestionText();
   const mainQuestionVerb = "Quel est le verbe ?";
   const mainQuestionSubject = "Quel est le sujet ?";
+  // L'animation Wavy ne se produit que si la question principale est affichée ET que le statut est 'asking_verb' ou 'asking_subject'
+  // et que la currentQuestionAnimKey a changé.
   const shouldApplyWavyAnimation =
     (questionText === mainQuestionVerb && (status === 'asking_verb' || (status === 'feedback_correct' && lastCorrectStage === 'subject'))) ||
     (questionText === mainQuestionSubject && status === 'asking_subject');
@@ -404,13 +415,13 @@ export default function PetitAdamPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8 text-center select-none">
       {showFireworks && <FireworksAnimation />}
-
+      
       <header className="w-full flex justify-between items-center mb-6 md:mb-10">
-        <Image
-          src="/images/petit-adam-logo.png"
-          alt="Petit Adam Logo"
+        <Image 
+          src="/images/petit-adam-logo.png" 
+          alt="Petit Adam Logo" 
           width={200}
-          height={158}
+          height={158} 
           className="drop-shadow-md"
           priority
           data-ai-hint="child education"
@@ -440,12 +451,12 @@ export default function PetitAdamPage() {
                   { (status === 'asking_verb' || status === 'asking_subject') && <Brain className="w-8 h-8 sm:w-10 sm:h-10 mr-3 text-primary" /> }
                   { isFeedbackIncorrect && <MessageCircleQuestion className="w-8 h-8 sm:w-10 sm:h-10 mr-3 text-destructive" /> }
                   { status === 'feedback_correct' && !showFireworks && <SparklesLucide className="w-8 h-8 sm:w-10 sm:h-10 mr-3 text-accent" /> }
-
-                  <h2 key={currentQuestionAnimKey}> 
+                  
+                  <h2 key={currentQuestionAnimKey}> {/* La clé est importante pour redémarrer l'animation wavy */}
                     {shouldApplyWavyAnimation
                       ? questionText.split('').map((char, index) => (
                           <span
-                            key={`${char}-${index}`} 
+                            key={`${char}-${index}`} // Clé unique pour chaque lettre
                             className="wavy-text-letter"
                             style={{ animationDelay: `${index * 0.05}s` }}
                           >
@@ -461,9 +472,9 @@ export default function PetitAdamPage() {
               </>
             )}
           </div>
-
+          
           {words.length > 0 && status !== 'loading' && status !== 'initial_loading' && (
-            <div
+            <div 
               className={cn(
                 "flex flex-wrap justify-center items-center gap-2 sm:gap-3 p-4 sm:p-6 mb-6 md:mb-8 min-h-[100px] sm:min-h-[150px] bg-secondary/30 rounded-lg",
                 (isFeedbackIncorrect && status === 'feedback_incorrect_verb') && "animate-shake border-2 border-destructive",
@@ -472,7 +483,7 @@ export default function PetitAdamPage() {
             >
               {words.map((word, index) => (
                 <WordChip
-                  key={`${word}-${index}`} 
+                  key={`${word}-${index}`} // Utiliser une clé qui change si le mot ou l'index change
                   word={word}
                   isSelected={selectedIndices.includes(index)}
                   onClick={() => handleWordClick(index)}
@@ -482,11 +493,11 @@ export default function PetitAdamPage() {
             </div>
           )}
            {(words.length === 0 && status !== 'loading' && status !== 'initial_loading') && (
-             <div className="min-h-[100px] sm:min-h-[150px] mb-6 md:mb-8"> </div>
+             <div className="min-h-[100px] sm:min-h-[150px] mb-6 md:mb-8"> {/* Espace réservé si pas de mots */} </div>
            )}
 
           <div className="h-auto flex flex-col items-center justify-center">
-            <div className="h-[76px] flex items-center justify-center relative w-full sm:w-auto"> 
+            <div className="h-[76px] flex items-center justify-center relative w-full sm:w-auto"> {/* Conteneur pour le bouton et ses particules */}
               {buttonParticles.map(particle => (
                 <div key={particle.id} className="button-particle" style={particle.style} />
               ))}
@@ -502,13 +513,15 @@ export default function PetitAdamPage() {
                 </Button>
               )}
             </div>
+             {/* Bouton "Passer / Nouvelle phrase" toujours visible sauf pendant le chargement ou feedback correct immédiat */}
              {(status === 'asking_verb' || status === 'asking_subject' || status === 'feedback_incorrect_verb' || status === 'feedback_incorrect_subject') && (
               <Button
                 variant="link"
                 className="mt-4 text-muted-foreground text-sm"
                 onClick={() => {
+                  // S'assurer que nous ne sommes pas en train de charger ou que allSentences est vide
                   if (status !== 'loading' && status !== 'initial_loading' && allSentences.length > 0) {
-                    setSelectedIndices([]); 
+                    setSelectedIndices([]); // Réinitialiser la sélection
                     fetchNewSentence();
                   }
                 }}
@@ -529,3 +542,4 @@ export default function PetitAdamPage() {
     </div>
   );
 }
+
