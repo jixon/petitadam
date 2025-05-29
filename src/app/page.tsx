@@ -120,7 +120,7 @@ export default function PetitAdamPage() {
     return () => {
       if (audio) {
         audio.pause();
-        (audio as any).src = ''; 
+        // (audio as any).src = ''; // Problematic line removed
       }
     };
   }, []); // Empty dependency array means this runs once on mount
