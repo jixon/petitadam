@@ -59,6 +59,8 @@ export default function PetitAdamPage() {
         if (currentProgress <= 100) {
           setLoadingProgressValue(currentProgress);
         } else {
+          // Ensure it visually hits 100% but don't clear interval here
+          // as the API call might still be pending.
           setLoadingProgressValue(100); 
         }
       }, 100);
@@ -79,7 +81,7 @@ export default function PetitAdamPage() {
       
       setTimeout(() => { 
         setStatus('asking_verb'); 
-      }, 300);
+      }, 300); // Brief delay to show 100% progress
 
     } catch (error) {
       console.error("Failed to generate sentence:", error);
@@ -89,10 +91,14 @@ export default function PetitAdamPage() {
       }
       setLoadingProgressValue(100); 
 
+      // Use one of the updated fallbacks with correct structure
       const fallbacks = [
         { sentence: "Le chien court vite.", words: ["Le", "chien", "court", "vite."], subjectIndices: [0, 1], verbIndices: [2] },
         { sentence: "Elle dessine un chat.", words: ["Elle", "dessine", "un", "chat."], subjectIndices: [0], verbIndices: [1] },
         { sentence: "L'oiseau vole haut.", words: ["L'oiseau", "vole", "haut."], subjectIndices: [0], verbIndices: [1] },
+        { sentence: "Maman prépare le gâteau.", words: ["Maman", "prépare", "le", "gâteau."], subjectIndices: [0], verbIndices: [1]},
+        { sentence: "Le chat dort.", words: ["Le", "chat", "dort."], subjectIndices: [0,1], verbIndices: [2]},
+        { sentence: "Regarde les étoiles!", words: ["Regarde", "les", "étoiles!"], subjectIndices: [], verbIndices: [0]},
       ];
       const fallbackSentence = fallbacks[Math.floor(Math.random() * fallbacks.length)];
       setSentence(fallbackSentence.sentence); 
@@ -102,8 +108,9 @@ export default function PetitAdamPage() {
       
       setTimeout(() => { 
         setStatus('asking_verb'); 
-      }, 300);
+      }, 300); // Brief delay
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); 
 
   useEffect(() => {
@@ -130,7 +137,7 @@ export default function PetitAdamPage() {
 
     const buttonRect = validateButtonRef.current.getBoundingClientRect();
     const parentElement = validateButtonRef.current.parentElement;
-    if (!parentElement) return;
+    if (!parentElement) return; // Should not happen if ref is attached
     const containerRect = parentElement.getBoundingClientRect();
 
     const startX = buttonRect.left - containerRect.left + buttonRect.width / 2;
@@ -153,11 +160,11 @@ export default function PetitAdamPage() {
           '--tx-btn': `${Math.cos(angle) * radius}px`,
           '--ty-btn': `${Math.sin(angle) * radius}px`,
           animationDelay: `${Math.random() * 0.2}s`,
-        } as React.CSSProperties,
+        } as React.CSSProperties, // Cast to React.CSSProperties
       });
     }
     setButtonParticles(newParticles);
-    setTimeout(() => setButtonParticles([]), 600); 
+    setTimeout(() => setButtonParticles([]), 600); // Particle animation duration
   };
 
   const handleSubmit = () => {
@@ -173,12 +180,12 @@ export default function PetitAdamPage() {
         setTimeout(() => {
           setShowFireworks(false);
           setStatus('asking_subject'); 
-        }, 1500);
+        }, 1500); // Duration of fireworks + feedback
       } else {
         setStatus('feedback_incorrect_verb');
-        setSelectedIndices([]); 
+        setSelectedIndices([]); // Clear selection on incorrect answer
         setTimeout(() => {
-          setStatus('asking_verb'); 
+          setStatus('asking_verb'); // Return to asking verb after feedback
         }, 1500);
       }
     } else if (status === 'asking_subject') {
@@ -191,16 +198,16 @@ export default function PetitAdamPage() {
         setIsScoreAnimating(true);
         setTimeout(() => {
           setIsScoreAnimating(false);
-        }, 300);
+        }, 300); // Score animation duration
         setTimeout(() => {
           setShowFireworks(false);
-          fetchNewSentence(); 
-        }, 1500);
+          fetchNewSentence(); // Fetch new sentence after subject is correct
+        }, 1500); // Duration of fireworks + feedback
       } else {
         setStatus('feedback_incorrect_subject');
-        setSelectedIndices([]);
+        setSelectedIndices([]); // Clear selection on incorrect answer
          setTimeout(() => {
-          setStatus('asking_subject'); 
+          setStatus('asking_subject'); // Return to asking subject after feedback
         }, 1500);
       }
     }
@@ -220,6 +227,11 @@ export default function PetitAdamPage() {
 
   const isSentenceInteractive = status === 'asking_verb' || status === 'asking_subject';
   const isFeedbackIncorrect = status === 'feedback_incorrect_verb' || status === 'feedback_incorrect_subject';
+
+  const questionText = getQuestionText();
+  const mainQuestionVerb = "Quel est le verbe ?";
+  const mainQuestionSubject = "Quel est le sujet ?";
+  const shouldApplyWavyAnimation = questionText === mainQuestionVerb || questionText === mainQuestionSubject;
 
 
   return (
@@ -244,7 +256,7 @@ export default function PetitAdamPage() {
             {status === 'loading' ? (
               <div className="flex flex-col items-center justify-center text-center gap-3 w-full">
                 <Loader2 className="w-10 h-10 sm:w-12 sm:h-12 text-primary animate-spin" />
-                <p className="text-lg text-muted-foreground mt-2">{getQuestionText()}</p>
+                <p className="text-lg text-muted-foreground mt-2">{questionText}</p>
                 <Progress value={loadingProgressValue} className="w-3/4 max-w-xs mt-2" />
               </div>
             ) : (
@@ -253,7 +265,21 @@ export default function PetitAdamPage() {
                   { (status === 'asking_verb' || status === 'asking_subject') && <Brain className="w-8 h-8 sm:w-10 sm:h-10 mr-3 text-primary" /> }
                   { isFeedbackIncorrect && <MessageCircleQuestion className="w-8 h-8 sm:w-10 sm:h-10 mr-3 text-destructive" /> }
                   { status === 'feedback_correct' && !showFireworks && <SparklesLucide className="w-8 h-8 sm:w-10 sm:h-10 mr-3 text-accent" /> }
-                  <h2>{getQuestionText()}</h2>
+                  
+                  <h2 key={questionText + status}> {/* Key to re-trigger animation */}
+                    {shouldApplyWavyAnimation
+                      ? questionText.split('').map((char, index) => (
+                          <span
+                            key={index}
+                            className="wavy-text-letter"
+                            style={{ animationDelay: `${index * 0.05}s` }}
+                          >
+                            {char === ' ' ? '\u00A0' : char} {/* Non-breaking space */}
+                          </span>
+                        ))
+                      : questionText
+                    }
+                  </h2>
                 </div>
                 {isFeedbackIncorrect && <p className="text-destructive text-lg">Essaie encore !</p>}
                 {status === 'feedback_correct' && !showFireworks && <p className="text-accent text-lg">Super !</p>}
@@ -281,11 +307,11 @@ export default function PetitAdamPage() {
             </div>
           )}
            {(words.length === 0 && status !== 'loading') && (
-             <div className="min-h-[100px] sm:min-h-[150px] mb-6 md:mb-8"> </div>
+             <div className="min-h-[100px] sm:min-h-[150px] mb-6 md:mb-8"> {/* Placeholder for spacing */} </div>
            )}
 
           <div className="h-auto flex flex-col items-center justify-center">
-            <div className="h-[76px] flex items-center justify-center relative w-full sm:w-auto"> 
+            <div className="h-[76px] flex items-center justify-center relative w-full sm:w-auto"> {/* Container for button and particles */}
               {buttonParticles.map(particle => (
                 <div key={particle.id} className="button-particle" style={particle.style} />
               ))}
@@ -301,12 +327,13 @@ export default function PetitAdamPage() {
                 </Button>
               )}
             </div>
-             {(status === 'asking_verb' || status === 'asking_subject' || isFeedbackIncorrect) && (
+             {/* "Passer / Nouvelle phrase" button always visible unless loading */}
+             {(status !== 'loading' && status !== 'feedback_correct') && (
               <Button
                 variant="link"
                 className="mt-4 text-muted-foreground text-sm"
                 onClick={() => {
-                  if (status !== 'loading') { 
+                  if (status !== 'loading') { // Double check to prevent race conditions
                     setSelectedIndices([]); 
                     fetchNewSentence();
                   }
@@ -328,4 +355,3 @@ export default function PetitAdamPage() {
     </div>
   );
 }
-
