@@ -20,9 +20,9 @@ export type GenerateFrenchSentenceInput = z.infer<typeof GenerateFrenchSentenceI
 
 const GenerateFrenchSentenceOutputSchema = z.object({
   sentence: z.string().describe('A simple French sentence suitable for young children (e.g., "Le chat mange.").'),
-  words: z.array(z.string()).describe('The sentence tokenized into words (e.g., ["Le", "chat", "mange", "."]). Punctuation should be separate tokens.'),
-  verbIndices: z.array(z.number()).describe('The 0-based indices of the verb(s) in the `words` array (e.g., for "Le chat mange.", if words is ["Le", "chat", "mange", "."], verbIndices would be [2]).'),
-  subjectIndices: z.array(z.number()).describe('The 0-based indices of the subject(s) in the `words` array (e.g., for "Le chat mange.", if words is ["Le", "chat", "mange", "."], subjectIndices would be [0, 1]). If the subject is implied (e.g., imperative sentences), this can be an empty array.'),
+  words: z.array(z.string()).describe('The sentence tokenized into words (e.g., ["Le", "chat", "mange."]). Punctuation should be attached to the preceding word.'),
+  verbIndices: z.array(z.number()).describe('The 0-based indices of the verb(s) in the `words` array (e.g., for "Le chat mange.", if words is ["Le", "chat", "mange."], verbIndices would be [2]).'),
+  subjectIndices: z.array(z.number()).describe('The 0-based indices of the subject(s) in the `words` array (e.g., for "Le chat mange.", if words is ["Le", "chat", "mange."], subjectIndices would be [0, 1]). If the subject is implied (e.g., imperative sentences), this can be an empty array.'),
 });
 export type GenerateFrenchSentenceOutput = z.infer<typeof GenerateFrenchSentenceOutputSchema>;
 
@@ -42,7 +42,7 @@ The sentences must:
 1. Be grammatically correct and simple.
 2. Contain a clear subject (explicit or implicit for imperatives) and at least one main verb.
 3. Be appropriate for young children (around 5-8 years old).
-4. Punctuation marks (like '.', '!', '?') should be treated as separate tokens in the 'words' array.
+4. Punctuation marks (like '.', '!', '?') should be attached to the preceding word in the 'words' array. For example, "joue." is one token, not "joue" and ".".
 
 {{#if topic}}
 The sentence should be related to the topic: {{{topic}}}.
@@ -55,7 +55,7 @@ Input: {}
 Output:
 {
   "sentence": "Le petit chien joue.",
-  "words": ["Le", "petit", "chien", "joue", "."],
+  "words": ["Le", "petit", "chien", "joue."],
   "subjectIndices": [0, 1, 2],
   "verbIndices": [3]
 }
@@ -65,7 +65,7 @@ Input: {}
 Output:
 {
   "sentence": "Chante une chanson !",
-  "words": ["Chante", "une", "chanson", "!"],
+  "words": ["Chante", "une", "chanson!"],
   "subjectIndices": [],
   "verbIndices": [0]
 }
@@ -75,7 +75,7 @@ Input: {}
 Output:
 {
   "sentence": "Elle va manger.",
-  "words": ["Elle", "va", "manger", "."],
+  "words": ["Elle", "va", "manger."],
   "subjectIndices": [0],
   "verbIndices": [1, 2]
 }
@@ -85,7 +85,7 @@ Input: { "topic": "cats" }
 Output:
 {
   "sentence": "Le chat dort.",
-  "words": ["Le", "chat", "dort", "."],
+  "words": ["Le", "chat", "dort."],
   "subjectIndices": [0, 1],
   "verbIndices": [2]
 }
@@ -95,7 +95,7 @@ Input: {}
 Output:
 {
   "sentence": "Ce n'est pas difficile.",
-  "words": ["Ce", "n'", "est", "pas", "difficile", "."],
+  "words": ["Ce", "n'", "est", "pas", "difficile."],
   "subjectIndices": [0],
   "verbIndices": [2] 
 }
@@ -116,13 +116,12 @@ const generateFrenchSentenceFlow = ai.defineFlow(
     const {output} = await prompt(input);
     if (!output) {
       // Fallback or error handling if AI fails to provide output
-      // This is a basic fallback, consider more robust error handling
       console.error("AI did not return output for generateFrenchSentenceFlow. Input:", input);
       return {
-        sentence: "Je n'ai pas trouvé de phrase. Essaie encore !",
-        words: ["Je", "n'", "ai", "pas", "trouvé", "de", "phrase", ".", "Essaie", "encore", "!"],
-        subjectIndices: [0],
-        verbIndices: [2,3,4],
+        sentence: "Le soleil brille.",
+        words: ["Le", "soleil", "brille."],
+        subjectIndices: [0, 1],
+        verbIndices: [2],
       };
     }
     return output;

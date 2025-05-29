@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { WordChip } from '@/components/game/WordChip';
 import { FireworksAnimation } from '@/components/animations/FireworksAnimation';
+import { Progress } from "@/components/ui/progress";
 import { Star, Brain, MessageCircleQuestion, Loader2, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -29,6 +30,7 @@ export default function VerbeHeroPage() {
   const [score, setScore] = useState(0);
   const [status, setStatus] = useState<GameStatus>('loading');
   const [showFireworks, setShowFireworks] = useState(false);
+  const [progressValue, setProgressValue] = useState(0);
 
   const fetchNewSentence = useCallback(async () => {
     setStatus('loading');
@@ -39,16 +41,14 @@ export default function VerbeHeroPage() {
       setWords(result.words);
       setCorrectSubjectIndices(result.subjectIndices);
       setCorrectVerbIndices(result.verbIndices);
-      
       setStatus('asking_verb');
     } catch (error) {
       console.error("Failed to generate sentence:", error);
-      setSentence("Oops! Je n'ai pas pu trouver une phrase. Réessayons!");
-      const fallbackWords = ["Oops!", "Je", "n'ai", "pas", "pu", "trouver", "une", "phrase.", "Réessayons!"];
-      setWords(fallbackWords);
-      // Example fallback indices (adjust if AI consistently fails for this specific fallback)
-      setCorrectSubjectIndices([1]); // "Je"
-      setCorrectVerbIndices([2,3,4]); // "n'ai pas pu trouver" (as an example of a verb phrase)
+      // Fallback matches the one in the Genkit flow for consistency
+      setSentence("Le soleil brille.");
+      setWords(["Le", "soleil", "brille."]);
+      setCorrectSubjectIndices([0, 1]);
+      setCorrectVerbIndices([2]);
       setStatus('asking_verb');
     }
   }, []);
@@ -56,6 +56,29 @@ export default function VerbeHeroPage() {
   useEffect(() => {
     fetchNewSentence();
   }, [fetchNewSentence]);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout | undefined;
+    if (status === 'loading') {
+      setProgressValue(0); // Reset progress
+      let currentProgress = 0;
+      timer = setInterval(() => {
+        currentProgress += 20; // Increment progress
+        if (currentProgress >= 100) {
+          setProgressValue(100);
+          clearInterval(timer);
+        } else {
+          setProgressValue(currentProgress);
+        }
+      }, 150); // Adjust interval for speed (e.g. 150ms for faster loading feel)
+    } else {
+      // Optional: Reset progress if loading finishes very quickly or for other statuses
+      // setProgressValue(0); 
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [status]);
 
   const handleWordClick = (index: number) => {
     if (status !== 'asking_verb' && status !== 'asking_subject') return;
@@ -67,7 +90,6 @@ export default function VerbeHeroPage() {
 
   const checkAnswer = (indicesToCheck: number[]): boolean => {
     if (selectedIndices.length !== indicesToCheck.length) return false;
-    // Ensure all selected indices are in indicesToCheck and vice-versa
     const sortedSelected = [...selectedIndices].sort((a, b) => a - b);
     const sortedCorrect = [...indicesToCheck].sort((a, b) => a - b);
     return sortedSelected.every((val, index) => val === sortedCorrect[index]);
@@ -88,7 +110,7 @@ export default function VerbeHeroPage() {
       } else {
         setStatus('feedback_incorrect_verb');
         setTimeout(() => {
-          setStatus('asking_verb'); // Allow retry
+          setStatus('asking_verb'); 
         }, 1500);
       }
     } else if (status === 'asking_subject') {
@@ -99,12 +121,12 @@ export default function VerbeHeroPage() {
         setScore(s => s + 10);
         setTimeout(() => {
           setShowFireworks(false);
-          fetchNewSentence(); // This will set status to 'loading'
+          fetchNewSentence(); 
         }, 2500);
       } else {
         setStatus('feedback_incorrect_subject');
          setTimeout(() => {
-          setStatus('asking_subject'); // Allow retry
+          setStatus('asking_subject'); 
         }, 1500);
       }
     }
@@ -113,7 +135,7 @@ export default function VerbeHeroPage() {
   const getQuestionText = () => {
     if (status === 'asking_verb' || status === 'feedback_incorrect_verb') return "Quel est le verbe ?";
     if (status === 'asking_subject' || status === 'feedback_incorrect_subject') return "Quel est le sujet ?";
-    if (status === 'loading') return "Je cherche une phrase...";
+    if (status === 'loading') return "Je cherche une nouvelle phrase...";
     if (status === 'feedback_correct') return "Bravo ! C'est correct !";
     return "VerbeHero";
   };
@@ -135,9 +157,13 @@ export default function VerbeHeroPage() {
 
       <Card className="w-full max-w-3xl shadow-2xl rounded-xl overflow-hidden">
         <CardContent className="p-6 sm:p-8 md:p-10">
-          <div className="mb-6 md:mb-8 min-h-[60px] flex flex-col items-center justify-center">
+          <div className="mb-6 md:mb-8 min-h-[80px] sm:min-h-[100px] flex flex-col items-center justify-center"> {/* Increased min-h for progress bar */}
             {status === 'loading' ? (
-              <Loader2 className="w-12 h-12 text-primary animate-spin" />
+              <div className="flex flex-col items-center justify-center text-center gap-3 w-full">
+                <Loader2 className="w-10 h-10 sm:w-12 sm:h-12 text-primary animate-spin" />
+                <p className="text-lg text-muted-foreground mt-2">{getQuestionText()}</p>
+                <Progress value={progressValue} className="w-3/4 max-w-xs mt-2" />
+              </div>
             ) : (
               <>
                 <div className="flex items-center text-2xl sm:text-3xl md:text-4xl font-semibold mb-2 text-secondary-foreground">
@@ -234,4 +260,3 @@ function SparklesIcon(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   )
 }
-
