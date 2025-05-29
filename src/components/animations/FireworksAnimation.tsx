@@ -5,17 +5,20 @@
 import type { FC } from 'react';
 import { useEffect, useState } from 'react';
 
-const NUM_PARTICLES = 90; // Increased number of particles
+const NUM_PARTICLES = 180; // Increased number of particles
 const fireworkColors = [
   'hsl(var(--primary))',   // Cheerful sky blue
   'hsl(var(--accent))',    // Playful lime green
   'hsl(0, 100%, 70%)',   // Bright Red
-  'hsl(45, 100%, 70%)',  // Bright Yellow/Orange
+  'hsl(45, 100%, 70%)',  // Bright Yellow
   'hsl(300, 100%, 70%)', // Bright Pink/Purple
   'hsl(180, 100%, 70%)', // Bright Cyan
   'hsl(30, 100%, 65%)',  // Orange
   'hsl(240, 100%, 75%)', // Indigo
   'hsl(120, 100%, 60%)', // Green
+  'hsl(60, 100%, 50%)',  // Yellow
+  'hsl(330, 100%, 70%)', // Hot Pink
+  'hsl(200, 100%, 60%)', // Azure
 ];
 
 interface ParticleStyle extends React.CSSProperties {
@@ -33,10 +36,10 @@ export const FireworksAnimation: FC = () => {
   useEffect(() => {
     const newParticles = Array.from({ length: NUM_PARTICLES }).map(() => {
       const angle = Math.random() * Math.PI * 2;
-      // Increased spread radius (150px to 450px from center)
-      const radius = Math.random() * 300 + 150; 
-      // Particle size between 10px and 20px
-      const size = Math.random() * 10 + 10; 
+      // Increased spread radius (250px to 750px from center)
+      const radius = Math.random() * 500 + 250; 
+      // Particle size between 12px and 27px
+      const size = Math.random() * 15 + 12; 
       const color = fireworkColors[Math.floor(Math.random() * fireworkColors.length)];
 
       return {
@@ -44,7 +47,7 @@ export const FireworksAnimation: FC = () => {
         '--ty': `${Math.sin(angle) * radius}px`,
         left: '50%', // Particles originate from the center of their relative container
         top: '50%',
-        animationDelay: `${Math.random() * 0.5}s`, // Slightly longer delay spread
+        animationDelay: `${Math.random() * 0.6}s`, // Slightly longer delay spread for more visual effect
         backgroundColor: color,
         width: `${size}px`,
         height: `${size}px`,
