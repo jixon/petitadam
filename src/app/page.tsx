@@ -59,7 +59,7 @@ export default function VerbeHeroPage() {
         if (currentProgress <= 100) {
           setLoadingProgressValue(currentProgress);
         } else {
-          setLoadingProgressValue(100); // Cap at 100 in case interval runs an extra time
+          setLoadingProgressValue(100); 
         }
       }, 100);
 
@@ -69,7 +69,7 @@ export default function VerbeHeroPage() {
         clearInterval(progressIntervalId);
         progressIntervalId = undefined;
       }
-      setLoadingProgressValue(100); // Ensure progress is 100%
+      setLoadingProgressValue(100); 
 
       console.log("New sentence data:", result);
       setSentence(result.sentence);
@@ -77,7 +77,7 @@ export default function VerbeHeroPage() {
       setCorrectSubjectIndices(result.subjectIndices);
       setCorrectVerbIndices(result.verbIndices);
       
-      setTimeout(() => { // Short delay to allow user to see 100% progress
+      setTimeout(() => { 
         setStatus('asking_verb'); 
       }, 300);
 
@@ -87,7 +87,7 @@ export default function VerbeHeroPage() {
         clearInterval(progressIntervalId);
         progressIntervalId = undefined;
       }
-      setLoadingProgressValue(100); // Ensure progress is 100% even on error
+      setLoadingProgressValue(100); 
 
       // Fallback sentence
       setSentence("Le soleil brille."); 
@@ -95,7 +95,7 @@ export default function VerbeHeroPage() {
       setCorrectSubjectIndices([0, 1]);
       setCorrectVerbIndices([2]);
       
-      setTimeout(() => { // Short delay to allow user to see 100% progress
+      setTimeout(() => { 
         setStatus('asking_verb'); 
       }, 300);
     }
@@ -124,14 +124,12 @@ export default function VerbeHeroPage() {
     if (!validateButtonRef.current) return;
 
     const buttonRect = validateButtonRef.current.getBoundingClientRect();
-    // Ensure parentElement exists for getBoundingClientRect
     const parentElement = validateButtonRef.current.parentElement;
     if (!parentElement) return;
     const containerRect = parentElement.getBoundingClientRect();
 
     const startX = buttonRect.left - containerRect.left + buttonRect.width / 2;
     const startY = buttonRect.top - containerRect.top + buttonRect.height / 2;
-
 
     const newParticles: ButtonParticle[] = [];
     const numParticles = 12;
@@ -175,7 +173,7 @@ export default function VerbeHeroPage() {
         setStatus('feedback_incorrect_verb');
         setSelectedIndices([]); 
         setTimeout(() => {
-          if (status === 'feedback_incorrect_verb') setStatus('asking_verb'); 
+          setStatus('asking_verb'); 
         }, 1500);
       }
     } else if (status === 'asking_subject') {
@@ -197,7 +195,7 @@ export default function VerbeHeroPage() {
         setStatus('feedback_incorrect_subject');
         setSelectedIndices([]);
          setTimeout(() => {
-          if (status === 'feedback_incorrect_subject') setStatus('asking_subject'); 
+          setStatus('asking_subject'); 
         }, 1500);
       }
     }
@@ -217,6 +215,7 @@ export default function VerbeHeroPage() {
 
   const isSentenceInteractive = status === 'asking_verb' || status === 'asking_subject';
   const isFeedbackIncorrect = status === 'feedback_incorrect_verb' || status === 'feedback_incorrect_subject';
+  const showValidationControls = status === 'asking_verb' || status === 'asking_subject';
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8 text-center select-none">
@@ -234,11 +233,7 @@ export default function VerbeHeroPage() {
         </div>
       </header>
 
-      <Card className={cn(
-        "w-full max-w-3xl shadow-2xl rounded-xl overflow-hidden transition-all duration-300"
-        // Removed: status === 'loading' && "border-4 border-primary animate-pulse",
-        // The card will use its default border (from globals.css & card.tsx) during loading.
-        )}>
+      <Card className="w-full max-w-3xl shadow-2xl rounded-xl overflow-hidden transition-all duration-300">
         <CardContent className="p-6 sm:p-8 md:p-10">
           <div className="mb-6 md:mb-8 min-h-[80px] sm:min-h-[100px] flex flex-col items-center justify-center">
             {status === 'loading' ? (
@@ -288,7 +283,7 @@ export default function VerbeHeroPage() {
               {buttonParticles.map(particle => (
                 <div key={particle.id} className="button-particle" style={particle.style} />
               ))}
-              {(status === 'asking_verb' || status === 'asking_subject') && (
+              {showValidationControls && (
                 <Button
                   ref={validateButtonRef}
                   size="lg"
@@ -300,7 +295,7 @@ export default function VerbeHeroPage() {
                 </Button>
               )}
             </div>
-            {(status === 'asking_verb' || status === 'asking_subject') && (
+            {showValidationControls && (
               <Button
                 variant="link"
                 className="mt-4 text-muted-foreground text-sm"

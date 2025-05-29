@@ -149,6 +149,16 @@ Output:
   "verbIndices": [0]
 }
 
+Example 10 (Simple verb, direct object):
+Input: {}
+Output:
+{
+  "sentence": "Nous voulons un gâteau.",
+  "words": ["Nous", "voulons", "un", "gâteau."],
+  "subjectIndices": [0],
+  "verbIndices": [1]
+}
+
 
 Ensure your response strictly adheres to the output schema.
 Only provide the JSON object as specified by the schema.
@@ -171,6 +181,9 @@ const generateFrenchSentenceFlow = ai.defineFlow(
         { sentence: "Le soleil brille.", words: ["Le", "soleil", "brille."], subjectIndices: [0, 1], verbIndices: [2] },
         { sentence: "Le chat joue.", words: ["Le", "chat", "joue."], subjectIndices: [0, 1], verbIndices: [2] },
         { sentence: "L'oiseau chante.", words: ["L'", "oiseau", "chante."], subjectIndices: [0,1], verbIndices: [2] },
+        { sentence: "Elle aime dessiner.", words: ["Elle", "aime", "dessiner."], subjectIndices: [0], verbIndices: [1,2]},
+        { sentence: "Tu manges une pomme.", words: ["Tu", "manges", "une", "pomme."], subjectIndices: [0], verbIndices: [1]},
+
       ];
       return fallbacks[Math.floor(Math.random() * fallbacks.length)];
     }
@@ -179,12 +192,12 @@ const generateFrenchSentenceFlow = ai.defineFlow(
         console.warn("AI output.subjectIndices is not an array, defaulting to empty. Output:", output);
         output.subjectIndices = [];
     }
-    // Validate that verbIndices is an array
+    // Validate that verbIndices is an array and not empty
      if (!Array.isArray(output.verbIndices) || output.verbIndices.length === 0) {
         console.warn("AI output.verbIndices is not a non-empty array, using fallback. Output:", output);
-         // This case should ideally be rare with a good prompt, but as a last resort:
         return { sentence: "La fleur pousse.", words: ["La", "fleur", "pousse."], subjectIndices: [0, 1], verbIndices: [2] };
     }
     return output;
   }
 );
+
