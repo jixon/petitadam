@@ -65,15 +65,7 @@ const fallbackSentences: SentenceData[] = [
 ];
 
 export default function PetitAdamPage() {
-  const [debugMessages, setDebugMessages] = useState<string[]>(['Page debug activated.']);
-
-  const logToPage = useCallback((message: string) => {
-    setDebugMessages(prev => [...prev.slice(-20), `${new Date().toLocaleTimeString()}: ${message}`]); // Keep last 20 messages
-  }, []);
-
-  useEffect(() => {
-    logToPage('LOG POINT 0: PetitAdamPage component mounted.');
-  }, [logToPage]);
+  console.log('LOG POINT 0: PetitAdamPage component rendering or re-rendering.');
 
   const [sentence, setSentence] = useState('');
   const [words, setWords] = useState<string[]>([]);
@@ -100,71 +92,71 @@ export default function PetitAdamPage() {
   const [initialSentenceLoaded, setInitialSentenceLoaded] = useState(false);
 
   useEffect(() => {
-    logToPage('LOG POINT 1: Main useEffect hook entered.');
+    console.log('LOG POINT 1: Main useEffect hook entered.');
     let localSuccessAudio: HTMLAudioElement | null = null;
     let localFailAudio: HTMLAudioElement | null = null;
 
-    logToPage('LOG POINT 2: PRE-INIT successAudio.');
+    console.log('LOG POINT 2: PRE-INIT successAudio.');
     try {
       localSuccessAudio = new Audio('/sounds/cash-register.mp3');
       localSuccessAudio.preload = 'auto';
       setCashRegisterSound(localSuccessAudio);
-      logToPage(`LOG POINT 3: successAudio initialized. Path: /sounds/cash-register.mp3. Src: ${localSuccessAudio?.src}`);
+      console.log(`LOG POINT 3: successAudio initialized. Path: /sounds/cash-register.mp3. Src: ${localSuccessAudio?.src}`);
     } catch (e: any) {
-      logToPage(`LOG POINT 4: Error initializing successAudio: ${e.message}`);
+      console.error(`LOG POINT 4: Error initializing successAudio: ${e.message}`, e);
     }
 
-    logToPage('LOG POINT 5: PRE-INIT failAudio.');
+    console.log('LOG POINT 5: PRE-INIT failAudio.');
     try {
       localFailAudio = new Audio('/sounds/error-sound.mp3');
       localFailAudio.preload = 'auto';
-      setErrorSound(localFailAudio);
-      logToPage(`LOG POINT 6: failAudio initialized. Path: /sounds/error-sound.mp3. Src: ${localFailAudio?.src}`);
+      setErrorSound(localFailAudio); // Make sure this is called
+      console.log(`LOG POINT 6: failAudio initialized and setErrorSound called. Path: /sounds/error-sound.mp3. Src: ${localFailAudio?.src}`);
     } catch (e: any) {
-      logToPage(`LOG POINT 7: Error initializing failAudio: ${e.message}`);
+      console.error(`LOG POINT 7: Error initializing failAudio: ${e.message}`, e);
     }
     
-    logToPage('LOG POINT 8: After audio initializations.');
+    console.log('LOG POINT 8: After audio initializations.');
 
     setStatus('initial_loading');
     setLoadingProgressValue(0);
 
     fetch('/data/sentences.json')
       .then(res => {
-        logToPage(`LOG POINT 9: sentences.json fetch response received. Status: ${res.status}`);
+        console.log(`LOG POINT 9: sentences.json fetch response received. Status: ${res.status}`);
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
         return res.json();
       })
       .then((data: SentenceData[]) => {
-        logToPage(`LOG POINT 10: Fetched sentences.json data (first 2): ${JSON.stringify(data.slice(0,2))}...`);
+        console.log(`LOG POINT 10: Fetched sentences.json data (first 2): ${JSON.stringify(data.slice(0,2))}...`);
         if (data && data.length > 0) {
           setAllSentences(data);
         } else {
-          logToPage("LOG POINT 11: Sentences.json is empty or invalid, using fallback.");
+          console.log("LOG POINT 11: Sentences.json is empty or invalid, using fallback.");
           setAllSentences(fallbackSentences);
         }
       })
       .catch(error => {
-        logToPage(`LOG POINT 12: Failed to fetch sentences.json: ${error.message}`);
+        console.error(`LOG POINT 12: Failed to fetch sentences.json: ${error.message}`, error);
         setAllSentences(fallbackSentences);
       });
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js').then(registration => {
-          logToPage(`LOG POINT 13: SW registered: ${registration.scope}`);
+          console.log(`LOG POINT 13: SW registered: `, registration);
         }).catch(registrationError => {
-          logToPage(`LOG POINT 14: SW registration failed: ${registrationError.message}`);
+          console.error(`LOG POINT 14: SW registration failed: `, registrationError);
         });
       });
     } else {
-      logToPage('LOG POINT 14B: Service Worker not in navigator.');
+      console.log('LOG POINT 14B: Service Worker not in navigator.');
     }
 
     return () => {
-      logToPage('LOG POINT 15: Main useEffect cleanup running.');
+      console.log('LOG POINT 15: Main useEffect cleanup running.');
       if (localSuccessAudio) {
         localSuccessAudio.pause();
       }
@@ -172,7 +164,7 @@ export default function PetitAdamPage() {
         localFailAudio.pause();
       }
     };
-  }, [logToPage]); // logToPage is stable
+  }, []); 
 
   const processPhrase = (phrase: string): string[] => {
     const rawWords = phrase.split(' ');
@@ -193,16 +185,15 @@ export default function PetitAdamPage() {
 
 
   const fetchNewSentence = useCallback(async () => {
-    logToPage(`LOG POINT 16: fetchNewSentence called. allSentences.length: ${allSentences.length}`);
+    console.log(`LOG POINT 16: fetchNewSentence called. allSentences.length: ${allSentences.length}`);
     if (allSentences.length === 0) {
-      logToPage("LOG POINT 17: fetchNewSentence called but allSentences empty. Retrying might cause loop if initial fetch failed. Status is 'initial_loading'");
+      console.log("LOG POINT 17: fetchNewSentence called but allSentences empty. Status is 'initial_loading'");
       setStatus('initial_loading'); 
       return;
     }
 
     setStatus('loading');
     setSelectedIndices([]);
-    // setSentence(''); // Avoid clearing sentence to prevent intermediate re-renders if problematic
     setWords([]);
     setCorrectVerbIndices([]);
     setCorrectSubjectIndices([]);
@@ -212,7 +203,7 @@ export default function PetitAdamPage() {
     let currentProgress = 0;
 
     try {
-      logToPage('LOG POINT 18: fetchNewSentence - Starting progress interval.');
+      console.log('LOG POINT 18: fetchNewSentence - Starting progress interval.');
       progressIntervalId = setInterval(() => {
         currentProgress += 20;
         if (currentProgress <= 100) {
@@ -226,14 +217,14 @@ export default function PetitAdamPage() {
       if (allSentences.length > 1 && lastUsedSentenceIndex !== null) {
         availableSentences = allSentences.filter((_, index) => index !== lastUsedSentenceIndex);
         if (availableSentences.length === 0) { 
-            logToPage("LOG POINT 18B: All sentences used, resetting availableSentences to allSentences.");
+            console.log("LOG POINT 18B: All sentences used, resetting availableSentences to allSentences.");
             availableSentences = allSentences; 
         }
       }
 
       const randomIndex = Math.floor(Math.random() * availableSentences.length);
       const selectedSentenceObject = availableSentences[randomIndex];
-      logToPage(`LOG POINT 19: fetchNewSentence - Selected sentence: ${selectedSentenceObject.phrase}`);
+      console.log(`LOG POINT 19: fetchNewSentence - Selected sentence: ${selectedSentenceObject.phrase}`);
 
       const originalIndex = allSentences.findIndex(s => s.phrase === selectedSentenceObject.phrase);
       setLastUsedSentenceIndex(originalIndex);
@@ -241,7 +232,7 @@ export default function PetitAdamPage() {
       const currentWords = processPhrase(selectedSentenceObject.phrase);
       const currentSubjectIndices = findPartIndices(currentWords, selectedSentenceObject.sujet);
       const currentVerbIndices = findPartIndices(currentWords, selectedSentenceObject.verbe);
-      logToPage(`LOG POINT 20: fetchNewSentence - Words: ${currentWords.join('|')}, SubjIdx: ${currentSubjectIndices}, VerbIdx: ${currentVerbIndices}`);
+      console.log(`LOG POINT 20: fetchNewSentence - Words: ${currentWords.join('|')}, SubjIdx: ${currentSubjectIndices}, VerbIdx: ${currentVerbIndices}`);
 
 
       if (progressIntervalId) {
@@ -257,12 +248,12 @@ export default function PetitAdamPage() {
       setCurrentQuestionAnimKey(prevKey => prevKey + 1); 
 
       setTimeout(() => {
-        logToPage('LOG POINT 21: fetchNewSentence - Setting status to asking_verb.');
+        console.log('LOG POINT 21: fetchNewSentence - Setting status to asking_verb.');
         setStatus('asking_verb');
       }, 300); 
 
     } catch (error: any) {
-      logToPage(`LOG POINT 22: fetchNewSentence - Error: ${error.message}`);
+      console.error(`LOG POINT 22: fetchNewSentence - Error: ${error.message}`, error);
       if (progressIntervalId) {
         clearInterval(progressIntervalId);
         progressIntervalId = undefined;
@@ -270,7 +261,7 @@ export default function PetitAdamPage() {
       setLoadingProgressValue(100); 
 
       const fallbackSentenceData = fallbackSentences[Math.floor(Math.random() * fallbackSentences.length)];
-      logToPage(`LOG POINT 22B: Using fallback sentence: ${fallbackSentenceData.phrase}`);
+      console.log(`LOG POINT 22B: Using fallback sentence: ${fallbackSentenceData.phrase}`);
       const processedFallbackWords = processPhrase(fallbackSentenceData.phrase);
       const fallbackSubjectIndices = findPartIndices(processedFallbackWords, fallbackSentenceData.sujet);
       const fallbackVerbIndices = findPartIndices(processedFallbackWords, fallbackSentenceData.verbe);
@@ -282,20 +273,20 @@ export default function PetitAdamPage() {
       setCurrentQuestionAnimKey(prevKey => prevKey + 1);
 
       setTimeout(() => {
-        logToPage('LOG POINT 23: fetchNewSentence (catch) - Setting status to asking_verb.');
+        console.log('LOG POINT 23: fetchNewSentence (catch) - Setting status to asking_verb.');
         setStatus('asking_verb');
       }, 300);
     }
-  }, [allSentences, lastUsedSentenceIndex, logToPage]); 
+  }, [allSentences, lastUsedSentenceIndex]); 
 
   useEffect(() => {
-    logToPage(`LOG POINT 24: useEffect for initial sentence load. allSentences.length: ${allSentences.length}, initialSentenceLoaded: ${initialSentenceLoaded}`);
+    console.log(`LOG POINT 24: useEffect for initial sentence load. allSentences.length: ${allSentences.length}, initialSentenceLoaded: ${initialSentenceLoaded}`);
     if (allSentences.length > 0 && !initialSentenceLoaded) {
-      logToPage('LOG POINT 25: Conditions met for initial fetchNewSentence.');
+      console.log('LOG POINT 25: Conditions met for initial fetchNewSentence.');
       fetchNewSentence();
       setInitialSentenceLoaded(true); 
     }
-  }, [allSentences, initialSentenceLoaded, fetchNewSentence, logToPage]);
+  }, [allSentences, initialSentenceLoaded, fetchNewSentence]);
 
 
   const handleWordClick = (index: number) => {
@@ -350,58 +341,58 @@ export default function PetitAdamPage() {
   };
 
   const handleSubmit = () => {
-    logToPage(`LOG POINT 26: handleSubmit called. Current status: ${status}. Selected: ${selectedIndices.join(',')}`);
+    console.log(`LOG POINT 26: handleSubmit called. Current status: ${status}. Selected: ${selectedIndices.join(',')}`);
     triggerButtonAnimation();
     let isCorrect = false;
 
     if (status === 'asking_verb') {
       isCorrect = checkAnswer(correctVerbIndices);
-      logToPage(`LOG POINT 27: handleSubmit (verb) - isCorrect: ${isCorrect}, Correct verb indices: ${correctVerbIndices.join(',')}`);
+      console.log(`LOG POINT 27: handleSubmit (verb) - isCorrect: ${isCorrect}, Correct verb indices: ${correctVerbIndices.join(',')}`);
 
       if (isCorrect) {
         setLastCorrectStage('verb');
         setStatus('feedback_correct');
         setShowFireworks(true);
         if (cashRegisterSound) {
-          logToPage('LOG POINT 28: Playing cashRegisterSound for correct verb.');
+          console.log('LOG POINT 28: Playing cashRegisterSound for correct verb.');
           cashRegisterSound.currentTime = 0; 
-          cashRegisterSound.play().catch(error => logToPage(`LOG POINT 29: Error playing cashRegisterSound (verb): ${error.message}`));
+          cashRegisterSound.play().catch(error => console.error(`LOG POINT 29: Error playing cashRegisterSound (verb): ${error.message}`, error));
         }
         setSelectedIndices([]); 
         setTimeout(() => {
           setShowFireworks(false);
           setStatus('asking_subject'); 
           setCurrentQuestionAnimKey(prevKey => prevKey + 1); 
-          logToPage('LOG POINT 29B: Transitioned to asking_subject.');
+          console.log('LOG POINT 29B: Transitioned to asking_subject.');
         }, 1500); 
       } else {
         setStatus('feedback_incorrect_verb');
-        logToPage(`LOG POINT 30: Incorrect verb. errorSound object check: ${errorSound ? 'exists' : 'null'}`);
+        console.log(`LOG POINT 30: Incorrect verb. Checking errorSound state variable:`, errorSound);
         if (errorSound && typeof errorSound.play === 'function') {
-          logToPage(`LOG POINT 31: errorSound object exists for verb error. Attempting to play. Src: ${errorSound.src}`);
+          console.log(`LOG POINT 31: errorSound object exists for verb error. Attempting to play. Src: ${errorSound.src}`);
           errorSound.currentTime = 0;
-          errorSound.play().catch(error => logToPage(`LOG POINT 32: Error playing error sound (verb): ${error.message}`));
+          errorSound.play().catch(error => console.error(`LOG POINT 32: Error playing error sound (verb): ${error.message}`, error));
         } else {
-          logToPage('LOG POINT 33: errorSound is null or not valid for incorrect verb.');
+          console.log('LOG POINT 33: errorSound is null or not a valid audio object for incorrect verb.');
         }
         setSelectedIndices([]); 
         setTimeout(() => {
           setStatus('asking_verb'); 
-          logToPage('LOG POINT 33B: Returned to asking_verb after incorrect.');
+          console.log('LOG POINT 33B: Returned to asking_verb after incorrect.');
         }, 1500);
       }
     } else if (status === 'asking_subject') {
       isCorrect = checkAnswer(correctSubjectIndices);
-      logToPage(`LOG POINT 34: handleSubmit (subject) - isCorrect: ${isCorrect}, Correct subject indices: ${correctSubjectIndices.join(',')}`);
+      console.log(`LOG POINT 34: handleSubmit (subject) - isCorrect: ${isCorrect}, Correct subject indices: ${correctSubjectIndices.join(',')}`);
 
       if (isCorrect) {
         setLastCorrectStage('subject');
         setStatus('feedback_correct');
         setShowFireworks(true);
         if (cashRegisterSound) {
-          logToPage('LOG POINT 35: Playing cashRegisterSound for correct subject.');
+          console.log('LOG POINT 35: Playing cashRegisterSound for correct subject.');
           cashRegisterSound.currentTime = 0;
-          cashRegisterSound.play().catch(error => logToPage(`LOG POINT 36: Error playing cashRegisterSound (subject): ${error.message}`));
+          cashRegisterSound.play().catch(error => console.error(`LOG POINT 36: Error playing cashRegisterSound (subject): ${error.message}`, error));
         }
         setScore(s => s + 10);
         setIsScoreAnimating(true);
@@ -411,26 +402,26 @@ export default function PetitAdamPage() {
         setTimeout(() => {
           setShowFireworks(false);
           if (allSentences.length > 0) { 
-            logToPage('LOG POINT 36B: Correct subject, fetching new sentence.');
+            console.log('LOG POINT 36B: Correct subject, fetching new sentence.');
             fetchNewSentence(); 
           } else {
-            logToPage('LOG POINT 36C: Correct subject, but allSentences is empty, cannot fetch new.');
+            console.log('LOG POINT 36C: Correct subject, but allSentences is empty, cannot fetch new.');
           }
         }, 1500); 
       } else {
         setStatus('feedback_incorrect_subject');
-        logToPage(`LOG POINT 37: Incorrect subject. errorSound object check: ${errorSound ? 'exists' : 'null'}`);
+        console.log(`LOG POINT 37: Incorrect subject. Checking errorSound state variable:`, errorSound);
         if (errorSound && typeof errorSound.play === 'function') {
-          logToPage(`LOG POINT 38: errorSound object exists for subject error. Attempting to play. Src: ${errorSound.src}`);
+          console.log(`LOG POINT 38: errorSound object exists for subject error. Attempting to play. Src: ${errorSound.src}`);
           errorSound.currentTime = 0;
-          errorSound.play().catch(error => logToPage(`LOG POINT 39: Error playing error sound (subject): ${error.message}`));
+          errorSound.play().catch(error => console.error(`LOG POINT 39: Error playing error sound (subject): ${error.message}`, error));
         } else {
-          logToPage('LOG POINT 40: errorSound is null or not valid for incorrect subject.');
+          console.log('LOG POINT 40: errorSound is null or not a valid audio object for incorrect subject.');
         }
         setSelectedIndices([]); 
          setTimeout(() => {
           setStatus('asking_subject');
-          logToPage('LOG POINT 40B: Returned to asking_subject after incorrect.');
+          console.log('LOG POINT 40B: Returned to asking_subject after incorrect.');
         }, 1500);
       }
     }
@@ -457,8 +448,8 @@ export default function PetitAdamPage() {
   const mainQuestionSubject = "Quel est le sujet ?";
 
   const shouldApplyWavyAnimation =
-    (questionText === mainQuestionVerb && (status === 'asking_verb' || (status === 'feedback_correct' && lastCorrectStage === 'subject'))) || // Apply when verb question is active OR when just completed subject (and new verb question appears)
-    (questionText === mainQuestionSubject && status === 'asking_subject'); // Apply when subject question is active
+    (questionText === mainQuestionVerb && (status === 'asking_verb' || (status === 'feedback_correct' && lastCorrectStage === 'subject'))) || 
+    (questionText === mainQuestionSubject && status === 'asking_subject'); 
 
 
   return (
@@ -568,7 +559,7 @@ export default function PetitAdamPage() {
                 className="mt-4 text-muted-foreground text-sm"
                 onClick={() => {
                   if (status !== 'loading' && status !== 'initial_loading' && allSentences.length > 0) {
-                    logToPage('LOG POINT 41: "Passer / Nouvelle phrase" button clicked.');
+                    console.log('LOG POINT 41: "Passer / Nouvelle phrase" button clicked.');
                     setSelectedIndices([]); 
                     fetchNewSentence();
                   }
@@ -586,18 +577,7 @@ export default function PetitAdamPage() {
       <footer className="mt-8 text-sm text-muted-foreground">
         Appuyez sur les mots pour les sélectionner.
       </footer>
-
-      <div style={{ position: 'fixed', bottom: '10px', right: '10px', backgroundColor: 'rgba(0,0,0,0.7)', color: 'white', padding: '10px', borderRadius: '5px', zIndex: 10000, fontSize: '10px', maxHeight: '50px', overflowY: 'auto' }}>
-        DEBUG TEST VISIBLE?
-      </div>
-
-      {/* On-page debug area */}
-      <div className="fixed bottom-0 left-0 w-full h-48 bg-gray-800 text-white p-2 overflow-y-scroll text-xs z-[9999]">
-        <h3 className="text-sm font-bold mb-2">Debug Messages (Last 20):</h3>
-        {debugMessages.map((msg, index) => (
-          <p key={index} className="whitespace-pre-wrap break-all">{msg}</p>
-        ))}
-      </div>
     </div>
   );
 }
+
