@@ -1,3 +1,4 @@
+
 import type {Metadata} from 'next';
 import {Geist, Geist_Mono} from 'next/font/google';
 import './globals.css';
@@ -15,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'VerbeHero',
-  description: 'Apprenez les verbes et les sujets en français!',
+  title: 'Petit Adam (apprendre avec adam)',
+  description: 'Apprendre le français avec Adam : les verbes et les sujets en s\'amusant !',
 };
 
 export default function RootLayout({

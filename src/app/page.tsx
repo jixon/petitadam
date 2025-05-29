@@ -25,7 +25,7 @@ interface ButtonParticle {
   style: React.CSSProperties;
 }
 
-export default function VerbeHeroPage() {
+export default function PetitAdamPage() {
   const [sentence, setSentence] = useState('');
   const [words, setWords] = useState<string[]>([]);
   const [correctVerbIndices, setCorrectVerbIndices] = useState<number[]>([]);
@@ -79,7 +79,7 @@ export default function VerbeHeroPage() {
       
       setTimeout(() => { 
         setStatus('asking_verb'); 
-      }, 300);
+      }, 300); // Short delay to show 100% progress
 
     } catch (error) {
       console.error("Failed to generate sentence:", error);
@@ -90,14 +90,20 @@ export default function VerbeHeroPage() {
       setLoadingProgressValue(100); 
 
       // Fallback sentence
-      setSentence("Le soleil brille."); 
-      setWords(["Le", "soleil", "brille."]);
-      setCorrectSubjectIndices([0, 1]);
-      setCorrectVerbIndices([2]);
+      const fallbacks = [
+        { sentence: "Le chien court vite.", words: ["Le", "chien", "court", "vite."], subjectIndices: [0, 1], verbIndices: [2] },
+        { sentence: "Elle dessine un chat.", words: ["Elle", "dessine", "un", "chat."], subjectIndices: [0], verbIndices: [1] },
+        { sentence: "L'oiseau vole haut.", words: ["L'", "oiseau", "vole", "haut."], subjectIndices: [0,1], verbIndices: [2] },
+      ];
+      const fallbackSentence = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+      setSentence(fallbackSentence.sentence); 
+      setWords(fallbackSentence.words);
+      setCorrectSubjectIndices(fallbackSentence.subjectIndices);
+      setCorrectVerbIndices(fallbackSentence.verbIndices);
       
       setTimeout(() => { 
         setStatus('asking_verb'); 
-      }, 300);
+      }, 300); // Short delay to show 100% progress
     }
   }, []); 
 
@@ -210,19 +216,20 @@ export default function VerbeHeroPage() {
         if (lastCorrectStage === 'subject') return "Bravo ! Phrase complète !";
         return "Bravo ! C'est correct !";
     }
-    return "VerbeHero";
+    return "Petit Adam";
   };
 
   const isSentenceInteractive = status === 'asking_verb' || status === 'asking_subject';
   const isFeedbackIncorrect = status === 'feedback_incorrect_verb' || status === 'feedback_incorrect_subject';
-  const showValidationControls = status === 'asking_verb' || status === 'asking_subject';
+  const showValidationControls = status === 'asking_verb' || status === 'asking_subject' || isFeedbackIncorrect;
+
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8 text-center select-none">
       {showFireworks && <FireworksAnimation />}
       
       <header className="w-full flex justify-between items-center mb-6 md:mb-10">
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-primary drop-shadow-md">VerbeHero</h1>
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-primary drop-shadow-md">Petit Adam</h1>
         <div className={cn(
           "flex items-center bg-primary text-primary-foreground p-2 sm:p-3 rounded-lg shadow-lg",
           "transition-transform duration-300 ease-in-out",
@@ -246,7 +253,7 @@ export default function VerbeHeroPage() {
               <>
                 <div className="flex items-center text-2xl sm:text-3xl md:text-4xl font-semibold mb-2 text-secondary-foreground">
                   { (status === 'asking_verb' || status === 'asking_subject') && <Brain className="w-8 h-8 sm:w-10 sm:h-10 mr-3 text-primary" /> }
-                  { status.startsWith('feedback_incorrect') && <MessageCircleQuestion className="w-8 h-8 sm:w-10 sm:h-10 mr-3 text-destructive" /> }
+                  { isFeedbackIncorrect && <MessageCircleQuestion className="w-8 h-8 sm:w-10 sm:h-10 mr-3 text-destructive" /> }
                   { status === 'feedback_correct' && !showFireworks && <SparklesLucide className="w-8 h-8 sm:w-10 sm:h-10 mr-3 text-accent" /> }
                   <h2>{getQuestionText()}</h2>
                 </div>
@@ -260,7 +267,8 @@ export default function VerbeHeroPage() {
             <div 
               className={cn(
                 "flex flex-wrap justify-center items-center gap-2 sm:gap-3 p-4 sm:p-6 mb-6 md:mb-8 min-h-[100px] sm:min-h-[150px] bg-secondary/30 rounded-lg",
-                isFeedbackIncorrect && "animate-shake border-2 border-destructive"
+                (isFeedbackIncorrect && status === 'feedback_incorrect_verb') && "animate-shake border-2 border-destructive",
+                (isFeedbackIncorrect && status === 'feedback_incorrect_subject') && "animate-shake border-2 border-destructive"
               )}
             >
               {words.map((word, index) => (
@@ -283,7 +291,7 @@ export default function VerbeHeroPage() {
               {buttonParticles.map(particle => (
                 <div key={particle.id} className="button-particle" style={particle.style} />
               ))}
-              {showValidationControls && (
+              {(status === 'asking_verb' || status === 'asking_subject') && (
                 <Button
                   ref={validateButtonRef}
                   size="lg"
@@ -295,13 +303,15 @@ export default function VerbeHeroPage() {
                 </Button>
               )}
             </div>
-            {showValidationControls && (
+             {(status === 'asking_verb' || status === 'asking_subject' || isFeedbackIncorrect) && (
               <Button
                 variant="link"
                 className="mt-4 text-muted-foreground text-sm"
                 onClick={() => {
-                  setSelectedIndices([]); 
-                  fetchNewSentence();
+                  if (status !== 'loading') { // Prevent clicking while already loading
+                    setSelectedIndices([]); 
+                    fetchNewSentence();
+                  }
                 }}
                 disabled={status === 'loading'}
               >

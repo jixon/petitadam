@@ -19,7 +19,7 @@ const GenerateFrenchSentenceInputSchema = z.object({
 export type GenerateFrenchSentenceInput = z.infer<typeof GenerateFrenchSentenceInputSchema>;
 
 const GenerateFrenchSentenceOutputSchema = z.object({
-  sentence: z.string().describe('A simple French sentence suitable for young children (e.g., "Le chat mange.").'),
+  sentence: z.string().describe('A simple French sentence suitable for young children (e.g., "Le chat mange."). The sentence should be new and different from previous ones if possible.'),
   words: z.array(z.string()).describe('The sentence tokenized into words (e.g., ["Le", "chat", "mange."]). Punctuation should be attached to the preceding word. Contractions like "n\'est" should be tokenized as ["n\'", "est"].'),
   verbIndices: z.array(z.number()).describe('The 0-based indices of the verb(s) in the `words` array (e.g., for "Le chat mange.", if words is ["Le", "chat", "mange."], verbIndices would be [2]). This should include all parts of a compound verb or verb phrase (e.g., "va manger", "aimons lire").'),
   subjectIndices: z.array(z.number()).describe('The 0-based indices of the subject(s) in the `words` array (e.g., for "Le chat mange.", if words is ["Le", "chat", "mange."], subjectIndices would be [0, 1]). If the subject is implied (e.g., imperative sentences like "Regarde!"), this MUST be an empty array.'),
@@ -39,7 +39,7 @@ const prompt = ai.definePrompt({
   prompt: `You are an expert French linguist and teacher. Your task is to generate simple French sentences suitable for young children learning about verbs and subjects.
 
 The sentences must:
-1. Be grammatically correct and simple.
+1. Be grammatically correct and very simple.
 2. Contain a clear subject and at least one main verb. The verb can be a single word (e.g., 'mange') or a compound verb phrase (e.g., 'va manger', 'a joué'). For verb + infinitive constructions like 'aimons lire', include both the conjugated verb and the infinitive in the \`verbIndices\`.
 3. For imperative sentences (commands) where the subject is implied and not explicitly written (e.g., 'Regarde le soleil !' or 'Mange !'), the \`subjectIndices\` array MUST be empty.
 4. Be appropriate for young children (around 5-8 years old).
@@ -54,7 +54,7 @@ Be very careful with tonic pronouns (Moi, Toi, Lui, Elle, Nous, Vous, Eux, Elles
 {{#if topic}}
 The sentence should be related to the topic: {{{topic}}}.
 {{else}}
-Please generate a simple and **new/different** French sentence suitable for young children. Actively try to make it distinct from sentences you may have generated previously.
+Please generate a simple and **new/different** French sentence suitable for young children. Actively try to make it distinct from sentences you may have generated previously. Avoid common or overly simple phrases if possible, try to introduce a little variety.
 {{/if}}
 
 You need to provide the sentence, the sentence tokenized into words, and the 0-based indices for all subject words and all verb words within the tokenized \`words\` array.
@@ -178,12 +178,13 @@ const generateFrenchSentenceFlow = ai.defineFlow(
       console.error("AI did not return output for generateFrenchSentenceFlow. Input:", input);
       // Return a varied fallback to make it obvious if this is hit repeatedly
       const fallbacks = [
-        { sentence: "Le soleil brille.", words: ["Le", "soleil", "brille."], subjectIndices: [0, 1], verbIndices: [2] },
-        { sentence: "Le chat joue.", words: ["Le", "chat", "joue."], subjectIndices: [0, 1], verbIndices: [2] },
-        { sentence: "L'oiseau chante.", words: ["L'", "oiseau", "chante."], subjectIndices: [0,1], verbIndices: [2] },
-        { sentence: "Elle aime dessiner.", words: ["Elle", "aime", "dessiner."], subjectIndices: [0], verbIndices: [1,2]},
-        { sentence: "Tu manges une pomme.", words: ["Tu", "manges", "une", "pomme."], subjectIndices: [0], verbIndices: [1]},
-
+        { sentence: "Le chien court vite.", words: ["Le", "chien", "court", "vite."], subjectIndices: [0, 1], verbIndices: [2] },
+        { sentence: "Le chaton miaule.", words: ["Le", "chaton", "miaule."], subjectIndices: [0, 1], verbIndices: [2] },
+        { sentence: "L'oiseau bleu chante.", words: ["L'", "oiseau", "bleu", "chante."], subjectIndices: [0,1,2], verbIndices: [3] },
+        { sentence: "Elle adore dessiner.", words: ["Elle", "adore", "dessiner."], subjectIndices: [0], verbIndices: [1,2]},
+        { sentence: "Tu manges une fraise.", words: ["Tu", "manges", "une", "fraise."], subjectIndices: [0], verbIndices: [1]},
+        { sentence: "Les enfants jouent dehors.", words: ["Les", "enfants", "jouent", "dehors."], subjectIndices: [0,1], verbIndices: [2]},
+        { sentence: "Mon ami lit un livre.", words: ["Mon", "ami", "lit", "un", "livre."], subjectIndices: [0,1], verbIndices: [2]},
       ];
       return fallbacks[Math.floor(Math.random() * fallbacks.length)];
     }
@@ -195,6 +196,7 @@ const generateFrenchSentenceFlow = ai.defineFlow(
     // Validate that verbIndices is an array and not empty
      if (!Array.isArray(output.verbIndices) || output.verbIndices.length === 0) {
         console.warn("AI output.verbIndices is not a non-empty array, using fallback. Output:", output);
+        // Provide a very basic fallback if verbIndices are missing, ensuring it's valid
         return { sentence: "La fleur pousse.", words: ["La", "fleur", "pousse."], subjectIndices: [0, 1], verbIndices: [2] };
     }
     return output;
