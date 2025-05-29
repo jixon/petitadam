@@ -3,6 +3,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import Image from 'next/image';
 import { generateFrenchSentence } from '@/ai/flows/generate-french-sentence';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -42,6 +43,22 @@ export default function PetitAdamPage() {
   const [buttonParticles, setButtonParticles] = useState<ButtonParticle[]>([]);
   const validateButtonRef = useRef<HTMLButtonElement>(null);
   const [currentQuestionAnimKey, setCurrentQuestionAnimKey] = useState(0);
+  const [cashRegisterSound, setCashRegisterSound] = useState<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    // This effect runs only once on the client after hydration
+    const audio = new Audio('/sounds/cash-register.mp3'); 
+    audio.preload = 'auto';
+    setCashRegisterSound(audio);
+
+    return () => {
+      if (audio) {
+        audio.pause();
+        // @ts-ignore
+        audio.src = ''; 
+      }
+    };
+  }, []);
 
 
   const fetchNewSentence = useCallback(async () => {
@@ -178,6 +195,10 @@ export default function PetitAdamPage() {
         setLastCorrectStage('verb');
         setStatus('feedback_correct');
         setShowFireworks(true);
+        if (cashRegisterSound) {
+          cashRegisterSound.currentTime = 0; 
+          cashRegisterSound.play().catch(error => console.error("Error playing sound:", error));
+        }
         setSelectedIndices([]); 
         setTimeout(() => {
           setShowFireworks(false);
@@ -197,6 +218,10 @@ export default function PetitAdamPage() {
         setLastCorrectStage('subject');
         setStatus('feedback_correct');
         setShowFireworks(true);
+        if (cashRegisterSound) {
+          cashRegisterSound.currentTime = 0;
+          cashRegisterSound.play().catch(error => console.error("Error playing sound:", error));
+        }
         setScore(s => s + 10);
         setIsScoreAnimating(true);
         setTimeout(() => {
@@ -242,7 +267,14 @@ export default function PetitAdamPage() {
       {showFireworks && <FireworksAnimation />}
       
       <header className="w-full flex justify-between items-center mb-6 md:mb-10">
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-primary drop-shadow-md">Petit Adam</h1>
+        <Image 
+          src="/images/petit-adam-logo.png" 
+          alt="Petit Adam Logo" 
+          width={200}  // Adjust as needed, maintaining aspect ratio
+          height={158} // (373/470)*200 ~ 158
+          className="drop-shadow-md"
+          priority // Load logo quickly
+        />
         <div className={cn(
           "flex items-center bg-primary text-primary-foreground p-2 sm:p-3 rounded-lg shadow-lg",
           "transition-transform duration-300 ease-in-out",
