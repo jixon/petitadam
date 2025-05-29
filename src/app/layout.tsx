@@ -18,6 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'Petit Adam (apprendre avec adam)',
   description: 'Apprendre le français avec Adam : les verbes et les sujets en s\'amusant !',
+  manifest: '/manifest.json', // Ajout du lien vers le manifeste
 };
 
 export default function RootLayout({
@@ -27,6 +28,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr">
+      <head>
+        {/* D'autres balises head peuvent être ici */}
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {children}
         <Toaster />
