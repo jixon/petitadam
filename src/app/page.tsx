@@ -79,7 +79,7 @@ export default function PetitAdamPage() {
       
       setTimeout(() => { 
         setStatus('asking_verb'); 
-      }, 300); // Short delay to show 100% progress
+      }, 300);
 
     } catch (error) {
       console.error("Failed to generate sentence:", error);
@@ -89,11 +89,10 @@ export default function PetitAdamPage() {
       }
       setLoadingProgressValue(100); 
 
-      // Fallback sentence
       const fallbacks = [
         { sentence: "Le chien court vite.", words: ["Le", "chien", "court", "vite."], subjectIndices: [0, 1], verbIndices: [2] },
         { sentence: "Elle dessine un chat.", words: ["Elle", "dessine", "un", "chat."], subjectIndices: [0], verbIndices: [1] },
-        { sentence: "L'oiseau vole haut.", words: ["L'", "oiseau", "vole", "haut."], subjectIndices: [0,1], verbIndices: [2] },
+        { sentence: "L'oiseau vole haut.", words: ["L'oiseau", "vole", "haut."], subjectIndices: [0], verbIndices: [1] },
       ];
       const fallbackSentence = fallbacks[Math.floor(Math.random() * fallbacks.length)];
       setSentence(fallbackSentence.sentence); 
@@ -103,7 +102,7 @@ export default function PetitAdamPage() {
       
       setTimeout(() => { 
         setStatus('asking_verb'); 
-      }, 300); // Short delay to show 100% progress
+      }, 300);
     }
   }, []); 
 
@@ -221,7 +220,6 @@ export default function PetitAdamPage() {
 
   const isSentenceInteractive = status === 'asking_verb' || status === 'asking_subject';
   const isFeedbackIncorrect = status === 'feedback_incorrect_verb' || status === 'feedback_incorrect_subject';
-  const showValidationControls = status === 'asking_verb' || status === 'asking_subject' || isFeedbackIncorrect;
 
 
   return (
@@ -291,7 +289,7 @@ export default function PetitAdamPage() {
               {buttonParticles.map(particle => (
                 <div key={particle.id} className="button-particle" style={particle.style} />
               ))}
-              {(status === 'asking_verb' || status === 'asking_subject') && (
+              {(status === 'asking_verb' || status === 'asking_subject' || isFeedbackIncorrect) && (
                 <Button
                   ref={validateButtonRef}
                   size="lg"
@@ -308,7 +306,7 @@ export default function PetitAdamPage() {
                 variant="link"
                 className="mt-4 text-muted-foreground text-sm"
                 onClick={() => {
-                  if (status !== 'loading') { // Prevent clicking while already loading
+                  if (status !== 'loading') { 
                     setSelectedIndices([]); 
                     fetchNewSentence();
                   }
@@ -330,3 +328,4 @@ export default function PetitAdamPage() {
     </div>
   );
 }
+

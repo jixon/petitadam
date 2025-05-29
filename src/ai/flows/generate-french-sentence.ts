@@ -20,7 +20,7 @@ export type GenerateFrenchSentenceInput = z.infer<typeof GenerateFrenchSentenceI
 
 const GenerateFrenchSentenceOutputSchema = z.object({
   sentence: z.string().describe('A simple French sentence suitable for young children (e.g., "Le chat mange."). The sentence should be new and different from previous ones if possible, and feature a single-word main verb.'),
-  words: z.array(z.string()).describe('The sentence tokenized into words (e.g., ["Le", "chat", "mange."]). Punctuation should be attached to the preceding word. Contractions like "n\'est" should be tokenized as ["n\'", "est"].'),
+  words: z.array(z.string()).describe('The sentence tokenized into words (e.g., ["Le", "chat", "mange."]). Punctuation should be attached to the preceding word. Elided articles like "L\'abeille" should be a single token.'),
   verbIndices: z.array(z.number()).describe('The 0-based indices of the single-word main verb in the `words` array (e.g., for "Le chat mange.", if words is ["Le", "chat", "mange."], verbIndices would be [2]). This should only contain one index for the main verb.'),
   subjectIndices: z.array(z.number()).describe('The 0-based indices of the subject(s) in the `words` array (e.g., for "Le chat mange.", if words is ["Le", "chat", "mange."], subjectIndices would be [0, 1]). If the subject is implied (e.g., imperative sentences like "Regarde!"), this MUST be an empty array.'),
 });
@@ -44,7 +44,9 @@ The sentences must:
    - **IMPORTANT**: Avoid compound verbs (e.g., "a mangé", "va jouer") and constructions where the verb to be identified by the child would span multiple words (e.g., "aime dessiner"). The game focuses on identifying a single-word action verb.
 3. For imperative sentences (commands) where the subject is implied (e.g., 'Regarde !', 'Chante !'), the \`subjectIndices\` array MUST be empty.
 4. Punctuation marks (like '.', '!', '?') should be attached to the preceding word in the 'words' array. For example, "joue." is one token, not "joue" and ".".
-5. Contractions: For contractions like "n'est pas" or "l'ami", tokenize them carefully. For example, "n'est pas" should become ["n'", "est", "pas"]. "l'ami" should become ["l'", "ami"]. "Ce n'est pas" has "est" as the verb.
+5. Contractions & Elisions:
+   - For verbal/negation contractions like "n'est pas" or "n'a pas", tokenize the negative particle ("n'") and the verb part separately. Example: "n'est pas" should become ["n'", "est", "pas"]. In "Ce n'est pas", "est" is the verb, so its index in \`words\` will be for the "est" token.
+   - For elided articles (like "l'", "d'", "s'") directly preceding a noun (e.g., "l'ami", "l'abeille", "d'eau"), the article and the noun MUST be tokenized as a SINGLE word. Example: "l'ami" becomes ["l'ami"]. "L'abeille" becomes ["L'abeille"].
 
 **Tonic Pronouns and Subjects:**
 Be very careful with tonic pronouns (Moi, Toi, Lui, Elle, Nous, Vous, Eux, Elles).
@@ -79,14 +81,14 @@ Output:
   "verbIndices": [0]
 }
 
-Example 3 (Simple verb with object):
+Example 3 (Elided article, simple subject "L'oiseau"):
 Input: {}
 Output:
 {
-  "sentence": "Le garçon dessine un arbre.",
-  "words": ["Le", "garçon", "dessine", "un", "arbre."],
-  "subjectIndices": [0, 1],
-  "verbIndices": [2]
+  "sentence": "L'oiseau chante.",
+  "words": ["L'oiseau", "chante."],
+  "subjectIndices": [0],
+  "verbIndices": [1]
 }
 
 Example 4 (Simple sentence):
@@ -109,14 +111,14 @@ Output:
   "verbIndices": [2] 
 }
 
-Example 6 (Simple verb with different subject):
+Example 6 (Elided article "L'abeille" as subject):
 Input: {}
 Output:
 {
-  "sentence": "Les oiseaux volent.",
-  "words": ["Les", "oiseaux", "volent."],
-  "subjectIndices": [0, 1],
-  "verbIndices": [2]
+  "sentence": "L'abeille butine la fleur.",
+  "words": ["L'abeille", "butine", "la", "fleur."],
+  "subjectIndices": [0],
+  "verbIndices": [1]
 }
 
 Example 7 (Tonic pronoun for emphasis with subject pronoun):
@@ -159,7 +161,6 @@ Output:
   "verbIndices": [1]
 }
 
-
 Ensure your response strictly adheres to the output schema.
 Only provide the JSON object as specified by the schema.
 The verbIndices array should contain exactly one index for the single-word main verb.
@@ -179,7 +180,7 @@ const generateFrenchSentenceFlow = ai.defineFlow(
       const fallbacks = [
         { sentence: "Le chien court vite.", words: ["Le", "chien", "court", "vite."], subjectIndices: [0, 1], verbIndices: [2] },
         { sentence: "Le chaton miaule.", words: ["Le", "chaton", "miaule."], subjectIndices: [0, 1], verbIndices: [2] },
-        { sentence: "L'oiseau bleu chante.", words: ["L'", "oiseau", "bleu", "chante."], subjectIndices: [0,1,2], verbIndices: [3] },
+        { sentence: "L'oiseau chante.", words: ["L'oiseau", "chante."], subjectIndices: [0], verbIndices: [1] },
         { sentence: "Elle dessine une fleur.", words: ["Elle", "dessine", "une", "fleur."], subjectIndices: [0], verbIndices: [1]},
         { sentence: "Tu manges une fraise.", words: ["Tu", "manges", "une", "fraise."], subjectIndices: [0], verbIndices: [1]},
         { sentence: "Les enfants jouent dehors.", words: ["Les", "enfants", "jouent", "dehors."], subjectIndices: [0,1], verbIndices: [2]},
@@ -187,6 +188,7 @@ const generateFrenchSentenceFlow = ai.defineFlow(
         { sentence: "Le bébé sourit.", words: ["Le", "bébé", "sourit."], subjectIndices: [0,1], verbIndices: [2]},
         { sentence: "Papa travaille ici.", words: ["Papa", "travaille", "ici."], subjectIndices: [0], verbIndices: [1]},
         { sentence: "Maman cuisine bien.", words: ["Maman", "cuisine", "bien."], subjectIndices: [0], verbIndices: [1]},
+        { sentence: "L'étoile brille.", words: ["L'étoile", "brille."], subjectIndices: [0], verbIndices: [1]},
       ];
       return fallbacks[Math.floor(Math.random() * fallbacks.length)];
     }
@@ -198,7 +200,6 @@ const generateFrenchSentenceFlow = ai.defineFlow(
     
     if (!Array.isArray(output.verbIndices) || output.verbIndices.length !== 1) {
         console.warn("AI output.verbIndices is not a single-element array, using fallback. Output:", output);
-        // Provide a very basic fallback if verbIndices are missing or incorrect, ensuring it's valid
         return { sentence: "La fleur pousse.", words: ["La", "fleur", "pousse."], subjectIndices: [0, 1], verbIndices: [2] };
     }
     return output;
