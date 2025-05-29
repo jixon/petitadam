@@ -2,7 +2,7 @@
 // @/app/page.tsx
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { generateFrenchSentence } from '@/ai/flows/generate-french-sentence';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,6 +20,11 @@ type GameStatus =
   | 'feedback_incorrect_verb' 
   | 'feedback_incorrect_subject';
 
+interface ButtonParticle {
+  id: number;
+  style: React.CSSProperties;
+}
+
 export default function VerbeHeroPage() {
   const [sentence, setSentence] = useState('');
   const [words, setWords] = useState<string[]>([]);
@@ -34,6 +39,9 @@ export default function VerbeHeroPage() {
   const [loadingProgressValue, setLoadingProgressValue] = useState(0);
   const [isScoreAnimating, setIsScoreAnimating] = useState(false);
   const [lastCorrectStage, setLastCorrectStage] = useState<'verb' | 'subject' | null>(null);
+  const [buttonParticles, setButtonParticles] = useState<ButtonParticle[]>([]);
+  const validateButtonRef = useRef<HTMLButtonElement>(null);
+
 
   const fetchNewSentence = useCallback(async () => {
     setStatus('loading');
@@ -70,7 +78,7 @@ export default function VerbeHeroPage() {
       
       setTimeout(() => {
         setStatus('asking_verb');
-      }, 300); // Delay to show 100% progress
+      }, 300); 
 
     } catch (error) {
       console.error("Failed to generate sentence:", error);
@@ -86,10 +94,10 @@ export default function VerbeHeroPage() {
       setCorrectVerbIndices([2]);
       
       setTimeout(() => {
-        setStatus('asking_verb'); // For fallback
+        setStatus('asking_verb'); 
       }, 300);
     }
-  }, []); // Empty dependency array makes fetchNewSentence stable
+  }, []); 
 
   useEffect(() => {
     fetchNewSentence();
@@ -110,7 +118,42 @@ export default function VerbeHeroPage() {
     return sortedSelected.every((val, index) => val === sortedCorrect[index]);
   };
 
+  const triggerButtonAnimation = () => {
+    if (!validateButtonRef.current) return;
+
+    const buttonRect = validateButtonRef.current.getBoundingClientRect();
+    const containerRect = validateButtonRef.current.parentElement!.getBoundingClientRect(); // Parent is the relative container
+
+    const startX = buttonRect.left - containerRect.left + buttonRect.width / 2;
+    const startY = buttonRect.top - containerRect.top + buttonRect.height / 2;
+
+
+    const newParticles: ButtonParticle[] = [];
+    const numParticles = 12;
+    for (let i = 0; i < numParticles; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = Math.random() * 40 + 25; // Spread radius
+      const particleSize = 6; 
+
+      newParticles.push({
+        id: Math.random(),
+        style: {
+          left: `${startX - particleSize / 2}px`,
+          top: `${startY - particleSize / 2}px`,
+          width: `${particleSize}px`,
+          height: `${particleSize}px`,
+          '--tx-btn': `${Math.cos(angle) * radius}px`,
+          '--ty-btn': `${Math.sin(angle) * radius}px`,
+          animationDelay: `${Math.random() * 0.2}s`,
+        } as React.CSSProperties,
+      });
+    }
+    setButtonParticles(newParticles);
+    setTimeout(() => setButtonParticles([]), 600); // Clear particles after animation
+  };
+
   const handleSubmit = () => {
+    triggerButtonAnimation();
     let isCorrect = false;
     if (status === 'asking_verb') {
       isCorrect = checkAnswer(correctVerbIndices);
@@ -155,12 +198,6 @@ export default function VerbeHeroPage() {
     }
   };
   
-  const handleRetry = () => {
-    setSelectedIndices([]);
-    if(status === 'feedback_incorrect_verb') setStatus('asking_verb');
-    if(status === 'feedback_incorrect_subject') setStatus('asking_subject');
-  };
-
   const getQuestionText = () => {
     if (status === 'loading') return "Je cherche une nouvelle phrase...";
     if (status === 'asking_verb' || status === 'feedback_incorrect_verb') return "Quel est le verbe ?";
@@ -241,27 +278,37 @@ export default function VerbeHeroPage() {
              <div className="min-h-[100px] sm:min-h-[150px] mb-6 md:mb-8"> </div>
            )}
 
-          <div className="h-[76px] flex items-center justify-center"> 
-            {status !== 'loading' && (status === 'asking_verb' || status === 'asking_subject') ? (
+          <div className="h-auto flex flex-col items-center justify-center">
+            <div className="h-[76px] flex items-center justify-center relative w-full sm:w-auto"> 
+              {buttonParticles.map(particle => (
+                <div key={particle.id} className="button-particle" style={particle.style} />
+              ))}
+              {(status === 'asking_verb' || status === 'asking_subject') && (
+                <Button
+                  ref={validateButtonRef}
+                  size="lg"
+                  onClick={handleSubmit}
+                  disabled={selectedIndices.length === 0 || status === 'loading'}
+                  className="w-full sm:w-auto text-2xl sm:text-3xl px-10 py-6 sm:px-12 sm:py-7 rounded-xl shadow-lg transform hover:scale-105 transition-transform duration-200"
+                >
+                  Valider
+                </Button>
+              )}
+            </div>
+            {(status === 'asking_verb' || status === 'asking_subject') && (
               <Button
-                size="lg"
-                onClick={handleSubmit}
-                disabled={selectedIndices.length === 0 || status === 'loading'}
-                className="w-full sm:w-auto text-2xl sm:text-3xl px-10 py-6 sm:px-12 sm:py-7 rounded-xl shadow-lg transform hover:scale-105 transition-transform duration-200"
+                variant="link"
+                className="mt-4 text-muted-foreground text-sm"
+                onClick={() => {
+                  setSelectedIndices([]); // Clear selection before fetching new
+                  fetchNewSentence();
+                }}
+                disabled={status === 'loading'}
               >
-                Valider
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Passer / Nouvelle phrase
               </Button>
-            ) : status !== 'loading' && status.startsWith('feedback_incorrect') ? (
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={handleRetry}
-                className="w-full sm:w-auto text-2xl sm:text-3xl px-10 py-6 sm:px-12 sm:py-7 rounded-xl shadow-lg"
-              >
-                Réessayer
-                <RefreshCw className="ml-2 w-6 h-6" />
-              </Button>
-            ) : null } 
+            )}
           </div>
 
         </CardContent>

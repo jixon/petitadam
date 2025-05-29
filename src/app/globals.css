@@ -129,6 +129,7 @@ body {
     border-radius: 50%;
     animation: fly-out 1s ease-out forwards;
     opacity: 0;
+    pointer-events: none;
   }
 
   @keyframes fly-out {
@@ -139,6 +140,29 @@ body {
     100% {
       transform: translate(var(--tx, 0), var(--ty, 0)) scale(0);
       opacity: 0;
+    }
+  }
+
+  .button-particle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    animation: fly-out-button 0.6s ease-out forwards;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  @keyframes fly-out-button {
+    0% {
+      transform: translate(0, 0) scale(1);
+      opacity: 1;
+      background-color: hsl(var(--primary));
+    }
+    100% {
+      transform: translate(var(--tx-btn), var(--ty-btn)) scale(0);
+      opacity: 0;
+      background-color: hsl(var(--accent));
     }
   }
 }

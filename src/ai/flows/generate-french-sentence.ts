@@ -54,7 +54,7 @@ Be very careful with tonic pronouns (Moi, Toi, Lui, Elle, Nous, Vous, Eux, Elles
 {{#if topic}}
 The sentence should be related to the topic: {{{topic}}}.
 {{else}}
-Please generate a simple and new French sentence suitable for young children. Try to make it different from sentences you may have generated previously.
+Please generate a simple and **new/different** French sentence suitable for young children. Actively try to make it distinct from sentences you may have generated previously.
 {{/if}}
 
 You need to provide the sentence, the sentence tokenized into words, and the 0-based indices for all subject words and all verb words within the tokenized \`words\` array.
@@ -188,4 +188,3 @@ const generateFrenchSentenceFlow = ai.defineFlow(
     return output;
   }
 );
-
