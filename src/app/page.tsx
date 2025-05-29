@@ -82,15 +82,20 @@ export default function PetitAdamPage() {
   const validateButtonRef = useRef<HTMLButtonElement>(null);
   const [currentQuestionAnimKey, setCurrentQuestionAnimKey] = useState(0);
   const [cashRegisterSound, setCashRegisterSound] = useState<HTMLAudioElement | null>(null);
+  const [errorSound, setErrorSound] = useState<HTMLAudioElement | null>(null);
   
   const [allSentences, setAllSentences] = useState<SentenceData[]>([]);
   const [lastUsedSentenceIndex, setLastUsedSentenceIndex] = useState<number | null>(null);
   const [initialSentenceLoaded, setInitialSentenceLoaded] = useState(false);
 
   useEffect(() => {
-    const audio = new Audio('/sounds/cash-register.mp3'); 
-    audio.preload = 'auto';
-    setCashRegisterSound(audio);
+    const successAudio = new Audio('/sounds/cash-register.mp3'); 
+    successAudio.preload = 'auto';
+    setCashRegisterSound(successAudio);
+
+    const failAudio = new Audio('/sounds/error-sound.mp3');
+    failAudio.preload = 'auto';
+    setErrorSound(failAudio);
 
     setStatus('initial_loading'); 
     setLoadingProgressValue(0);
@@ -115,7 +120,6 @@ export default function PetitAdamPage() {
         setAllSentences(fallbackSentences); 
       });
       
-    // Enregistrement du Service Worker
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js').then(registration => {
@@ -127,8 +131,11 @@ export default function PetitAdamPage() {
     }
       
     return () => {
-      if (audio) {
-        audio.pause();
+      if (successAudio) {
+        successAudio.pause();
+      }
+      if (failAudio) {
+        failAudio.pause();
       }
     };
   }, []); 
@@ -317,10 +324,13 @@ export default function PetitAdamPage() {
         }, 1500); 
       } else {
         setStatus('feedback_incorrect_verb');
+        if (errorSound) {
+          errorSound.currentTime = 0;
+          errorSound.play().catch(error => console.error("Error playing error sound:", error));
+        }
         setSelectedIndices([]); 
         setTimeout(() => {
           setStatus('asking_verb'); 
-          // Key pour anim wavy n'est pas changée ici pour ne pas relancer l'anim
         }, 1500);
       }
     } else if (status === 'asking_subject') {
@@ -347,10 +357,13 @@ export default function PetitAdamPage() {
         }, 1500); 
       } else {
         setStatus('feedback_incorrect_subject');
+        if (errorSound) {
+          errorSound.currentTime = 0;
+          errorSound.play().catch(error => console.error("Error playing error sound:", error));
+        }
         setSelectedIndices([]); 
          setTimeout(() => {
           setStatus('asking_subject');
-          // Key pour anim wavy n'est pas changée ici
         }, 1500);
       }
     }
@@ -509,3 +522,5 @@ export default function PetitAdamPage() {
     </div>
   );
 }
+
+    
