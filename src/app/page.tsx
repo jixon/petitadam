@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { WordChip } from '@/components/game/WordChip';
 import { FireworksAnimation } from '@/components/animations/FireworksAnimation';
 import { Progress } from "@/components/ui/progress";
-import { Star, Brain, MessageCircleQuestion, Loader2, RefreshCw, SparklesIcon as SparklesLucide } from 'lucide-react'; // Renamed SparklesIcon to avoid conflict
+import { Star, Brain, MessageCircleQuestion, Loader2, RefreshCw, SparklesIcon as SparklesLucide } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type GameStatus = 
@@ -35,55 +35,65 @@ export default function VerbeHeroPage() {
   const [isScoreAnimating, setIsScoreAnimating] = useState(false);
   const [lastCorrectStage, setLastCorrectStage] = useState<'verb' | 'subject' | null>(null);
 
-
   const fetchNewSentence = useCallback(async () => {
     setStatus('loading');
     setSelectedIndices([]);
-    setSentence(''); 
-    setWords([]);    
+    setSentence('');
+    setWords([]);
+    let progressIntervalId: NodeJS.Timeout | undefined = undefined;
+
     try {
       console.log("Fetching new sentence...");
-      setLoadingProgressValue(0); // Reset progress for new sentence
+      setLoadingProgressValue(0);
       let currentProgress = 0;
-      const progressInterval = setInterval(() => {
-        currentProgress += 10; 
+      progressIntervalId = setInterval(() => {
+        currentProgress += 10;
         if (currentProgress <= 100) {
           setLoadingProgressValue(currentProgress);
         } else {
-           setLoadingProgressValue(100); // Ensure it hits 100 if slightly over
+          setLoadingProgressValue(100);
         }
       }, 100);
 
       const result = await generateFrenchSentence({});
-      clearInterval(progressInterval); // Stop progress once data is fetched
-      setLoadingProgressValue(100); // Ensure progress is full
+      if (progressIntervalId) {
+        clearInterval(progressIntervalId);
+        progressIntervalId = undefined;
+      }
+      setLoadingProgressValue(100);
 
       console.log("New sentence data:", result);
       setSentence(result.sentence);
       setWords(result.words);
       setCorrectSubjectIndices(result.subjectIndices);
       setCorrectVerbIndices(result.verbIndices);
-      setStatus('asking_verb');
+      
+      setTimeout(() => {
+        setStatus('asking_verb');
+      }, 300); // Delay to show 100% progress
+
     } catch (error) {
       console.error("Failed to generate sentence:", error);
+      if (progressIntervalId) {
+        clearInterval(progressIntervalId);
+        progressIntervalId = undefined;
+      }
+      setLoadingProgressValue(100); 
+
       setSentence("Le soleil brille."); 
       setWords(["Le", "soleil", "brille."]);
       setCorrectSubjectIndices([0, 1]);
       setCorrectVerbIndices([2]);
-      setStatus('asking_verb');
-    } finally {
-      // Brief pause to show 100% progress before transitioning
+      
       setTimeout(() => {
-        if (status === 'loading') { // Only transition if still loading
-             setStatus('asking_verb');
-        }
+        setStatus('asking_verb'); // For fallback
       }, 300);
     }
-  }, [status]); // Added status to dependencies to avoid issues if status changes rapidly
+  }, []); // Empty dependency array makes fetchNewSentence stable
 
   useEffect(() => {
     fetchNewSentence();
-  }, [fetchNewSentence]); // fetchNewSentence is stable due to useCallback
+  }, [fetchNewSentence]);
 
   const handleWordClick = (index: number) => {
     if (status !== 'asking_verb' && status !== 'asking_subject') return;
@@ -108,11 +118,11 @@ export default function VerbeHeroPage() {
         setLastCorrectStage('verb');
         setStatus('feedback_correct');
         setShowFireworks(true);
-        setSelectedIndices([]); // Clear selection for subject stage
+        setSelectedIndices([]); 
         setTimeout(() => {
           setShowFireworks(false);
           setStatus('asking_subject'); 
-        }, 1500); // Reduced timeout, no progress bar here
+        }, 1500);
       } else {
         setStatus('feedback_incorrect_verb');
         setSelectedIndices([]); 
@@ -133,8 +143,8 @@ export default function VerbeHeroPage() {
         }, 300);
         setTimeout(() => {
           setShowFireworks(false);
-          fetchNewSentence(); // Fetch new sentence after subject is correct
-        }, 1500); // Reduced timeout
+          fetchNewSentence(); 
+        }, 1500);
       } else {
         setStatus('feedback_incorrect_subject');
         setSelectedIndices([]);
@@ -188,7 +198,6 @@ export default function VerbeHeroPage() {
         status !== 'loading' && "border-border"
         )}>
         <CardContent className="p-6 sm:p-8 md:p-10">
-          {/* 1. Question/Feedback Header Area */}
           <div className="mb-6 md:mb-8 min-h-[80px] sm:min-h-[100px] flex flex-col items-center justify-center">
             {status === 'loading' ? (
               <div className="flex flex-col items-center justify-center text-center gap-3 w-full">
@@ -210,7 +219,6 @@ export default function VerbeHeroPage() {
             )}
           </div>
           
-          {/* 2. Word Chips Area */}
           {words.length > 0 && status !== 'loading' && (
             <div 
               className={cn(
@@ -233,8 +241,6 @@ export default function VerbeHeroPage() {
              <div className="min-h-[100px] sm:min-h-[150px] mb-6 md:mb-8"> </div>
            )}
 
-
-          {/* 3. Action Area: Buttons */}
           <div className="h-[76px] flex items-center justify-center"> 
             {status !== 'loading' && (status === 'asking_verb' || status === 'asking_subject') ? (
               <Button
@@ -267,33 +273,3 @@ export default function VerbeHeroPage() {
     </div>
   );
 }
-
-// Kept SparklesIcon from lucide-react, assuming it exists or you have it.
-// If not, and you were using the custom SVG, you'd use that one.
-// For this example, I'm assuming SparklesLucide is the intended lucide icon.
-// If you had a custom SparklesIcon component:
-/*
-function SparklesIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
-      <path d="M5 3v4" />
-      <path d="M19 17v4" />
-      <path d="M3 5h4" />
-      <path d="M17 19h4" />
-    </svg>
-  )
-}
-*/
-
