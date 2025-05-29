@@ -31,6 +31,7 @@ export default function VerbeHeroPage() {
   const [status, setStatus] = useState<GameStatus>('loading');
   const [showFireworks, setShowFireworks] = useState(false);
   const [progressValue, setProgressValue] = useState(0);
+  const [isScoreAnimating, setIsScoreAnimating] = useState(false);
 
   const fetchNewSentence = useCallback(async () => {
     setStatus('loading');
@@ -44,7 +45,6 @@ export default function VerbeHeroPage() {
       setStatus('asking_verb');
     } catch (error) {
       console.error("Failed to generate sentence:", error);
-      // Fallback matches the one in the Genkit flow for consistency
       setSentence("Le soleil brille.");
       setWords(["Le", "soleil", "brille."]);
       setCorrectSubjectIndices([0, 1]);
@@ -60,20 +60,17 @@ export default function VerbeHeroPage() {
   useEffect(() => {
     let timer: NodeJS.Timeout | undefined;
     if (status === 'loading') {
-      setProgressValue(0); // Reset progress
+      setProgressValue(0);
       let currentProgress = 0;
       timer = setInterval(() => {
-        currentProgress += 20; // Increment progress
+        currentProgress += 20; 
         if (currentProgress >= 100) {
           setProgressValue(100);
           clearInterval(timer);
         } else {
           setProgressValue(currentProgress);
         }
-      }, 150); // Adjust interval for speed (e.g. 150ms for faster loading feel)
-    } else {
-      // Optional: Reset progress if loading finishes very quickly or for other statuses
-      // setProgressValue(0); 
+      }, 150); 
     }
     return () => {
       if (timer) clearInterval(timer);
@@ -109,6 +106,7 @@ export default function VerbeHeroPage() {
         }, 2500);
       } else {
         setStatus('feedback_incorrect_verb');
+        setSelectedIndices([]); // Deselect words on incorrect answer
         setTimeout(() => {
           setStatus('asking_verb'); 
         }, 1500);
@@ -119,12 +117,17 @@ export default function VerbeHeroPage() {
         setStatus('feedback_correct');
         setShowFireworks(true);
         setScore(s => s + 10);
+        setIsScoreAnimating(true);
+        setTimeout(() => {
+          setIsScoreAnimating(false);
+        }, 300); // Animation duration
         setTimeout(() => {
           setShowFireworks(false);
           fetchNewSentence(); 
         }, 2500);
       } else {
         setStatus('feedback_incorrect_subject');
+        setSelectedIndices([]); // Deselect words on incorrect answer
          setTimeout(() => {
           setStatus('asking_subject'); 
         }, 1500);
@@ -149,7 +152,11 @@ export default function VerbeHeroPage() {
       
       <header className="w-full flex justify-between items-center mb-6 md:mb-10">
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-primary drop-shadow-md">VerbeHero</h1>
-        <div className="flex items-center bg-primary text-primary-foreground p-2 sm:p-3 rounded-lg shadow-lg">
+        <div className={cn(
+          "flex items-center bg-primary text-primary-foreground p-2 sm:p-3 rounded-lg shadow-lg",
+          "transition-transform duration-300 ease-in-out",
+          isScoreAnimating && "scale-110"
+        )}>
           <Star className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-300" />
           <span className="ml-2 text-2xl sm:text-3xl font-bold">{score}</span>
         </div>
@@ -157,7 +164,7 @@ export default function VerbeHeroPage() {
 
       <Card className="w-full max-w-3xl shadow-2xl rounded-xl overflow-hidden">
         <CardContent className="p-6 sm:p-8 md:p-10">
-          <div className="mb-6 md:mb-8 min-h-[80px] sm:min-h-[100px] flex flex-col items-center justify-center"> {/* Increased min-h for progress bar */}
+          <div className="mb-6 md:mb-8 min-h-[80px] sm:min-h-[100px] flex flex-col items-center justify-center">
             {status === 'loading' ? (
               <div className="flex flex-col items-center justify-center text-center gap-3 w-full">
                 <Loader2 className="w-10 h-10 sm:w-12 sm:h-12 text-primary animate-spin" />
@@ -217,7 +224,7 @@ export default function VerbeHeroPage() {
               size="lg"
               variant="outline"
               onClick={() => {
-                setSelectedIndices([]);
+                // setSelectedIndices([]); // Already handled in handleSubmit
                 if(status === 'feedback_incorrect_verb') setStatus('asking_verb');
                 if(status === 'feedback_incorrect_subject') setStatus('asking_subject');
               }}
@@ -236,7 +243,6 @@ export default function VerbeHeroPage() {
     </div>
   );
 }
-
 
 function SparklesIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
