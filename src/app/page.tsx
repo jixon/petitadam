@@ -385,8 +385,14 @@ export default function PetitAdamPage() {
         }, 1500); 
       } else {
         setStatus('feedback_incorrect_verb');
-        console.log(`LOG POINT 30: Incorrect verb. Calling playSound("error").`);
-        playSound('error');
+        console.log(`LOG POINT 30: Incorrect verb. Checking errorSound:`, errorSound);
+        if (errorSound) {
+            console.log(`LOG POINT 31: errorSound object exists, src: ${errorSound.src}. Attempting to play.`);
+            playSound('error');
+        } else {
+            console.log(`LOG POINT 33: errorSound is null, attempting to initialize and play.`);
+            playSound('error');
+        }
         setSelectedIndices([]); 
         setTimeout(() => {
           setStatus('asking_verb'); 
@@ -419,8 +425,14 @@ export default function PetitAdamPage() {
         }, 1500); 
       } else {
         setStatus('feedback_incorrect_subject');
-        console.log(`LOG POINT 37: Incorrect subject. Calling playSound("error").`);
-        playSound('error');
+        console.log(`LOG POINT 37: Incorrect subject. Checking errorSound:`, errorSound);
+        if (errorSound) {
+            console.log(`LOG POINT 38: errorSound object exists, src: ${errorSound.src}. Attempting to play.`);
+            playSound('error');
+        } else {
+            console.log(`LOG POINT 40: errorSound is null, attempting to initialize and play.`);
+            playSound('error');
+        }
         setSelectedIndices([]); 
          setTimeout(() => {
           setStatus('asking_subject');
