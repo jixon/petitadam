@@ -9,8 +9,17 @@ import { Card, CardContent } from '@/components/ui/card';
 import { WordChip } from '@/components/game/WordChip';
 import { FireworksAnimation } from '@/components/animations/FireworksAnimation';
 import { Progress } from "@/components/ui/progress";
-import { Brain, MessageCircleQuestion, Loader2, RefreshCw, SparklesIcon as SparklesLucide, XCircle } from 'lucide-react';
+import { Brain, MessageCircleQuestion, Loader2, RefreshCw, SparklesIcon as SparklesLucide } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 type GameStatus =
   | 'initial_loading'
@@ -77,7 +86,14 @@ export default function PetitAdamPage() {
 
   const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
   const [score, setScore] = useState(0);
-  const [mistakeCount, setMistakeCount] = useState(0);
+  
+  // New detailed stats
+  const [verbsFoundCount, setVerbsFoundCount] = useState(0);
+  const [subjectsFoundCount, setSubjectsFoundCount] = useState(0);
+  const [verbErrorsCount, setVerbErrorsCount] = useState(0);
+  const [subjectErrorsCount, setSubjectErrorsCount] = useState(0);
+  const [isStatsDialogOpen, setIsStatsDialogOpen] = useState(false);
+
   const [status, setStatus] = useState<GameStatus>('initial_loading');
   const [showFireworks, setShowFireworks] = useState(false);
 
@@ -101,48 +117,53 @@ export default function PetitAdamPage() {
   }, []);
 
   const playSound = useCallback((type: 'good-answer' | 'cash-register' | 'error') => {
+    let audio: HTMLAudioElement | null = null;
+    let soundPath = '';
+
     if (type === 'good-answer') {
-      let audio = goodAnswerSound;
-      if (!audio) {
-        try {
-          audio = new Audio('/sounds/good-answer.mp3');
-          audio.preload = 'auto';
-          setGoodAnswerSound(audio);
-        } catch (e) {
-          console.error('Error CREATING goodAnswerSound on demand:', e);
-          return;
+        audio = goodAnswerSound;
+        soundPath = '/sounds/good-answer.mp3';
+        if (!audio) {
+            try {
+                audio = new Audio(soundPath);
+                audio.preload = 'auto';
+                setGoodAnswerSound(audio);
+            } catch (e) {
+                console.error(`Error CREATING ${type} sound:`, e);
+                return;
+            }
         }
-      }
-      audio.currentTime = 0;
-      audio.play().catch(e => console.error('Error playing goodAnswerSound:', e));
     } else if (type === 'cash-register') {
-      let audio = cashRegisterSound;
-      if (!audio) {
-        try {
-          audio = new Audio('/sounds/cash-register.mp3');
-          audio.preload = 'auto';
-          setCashRegisterSound(audio);
-        } catch (e) {
-          console.error('Error creating cashRegisterSound on demand:', e);
-          return;
+        audio = cashRegisterSound;
+        soundPath = '/sounds/cash-register.mp3';
+        if (!audio) {
+            try {
+                audio = new Audio(soundPath);
+                audio.preload = 'auto';
+                setCashRegisterSound(audio);
+            } catch (e) {
+                console.error(`Error CREATING ${type} sound:`, e);
+                return;
+            }
         }
-      }
-      audio.currentTime = 0;
-      audio.play().catch(e => console.error('Error playing cashRegisterSound:', e));
     } else if (type === 'error') {
-      let audio = errorSound;
-      if (!audio) {
-        try {
-          audio = new Audio('/sounds/error-sound.mp3');
-          audio.preload = 'auto';
-          setErrorSound(audio);
-        } catch (e) {
-          console.error('Error creating errorSound on demand:', e);
-          return;
+        audio = errorSound;
+        soundPath = '/sounds/error-sound.mp3';
+         if (!audio) {
+            try {
+                audio = new Audio(soundPath);
+                audio.preload = 'auto';
+                setErrorSound(audio);
+            } catch (e) {
+                console.error(`Error CREATING ${type} sound:`, e);
+                return;
+            }
         }
-      }
-      audio.currentTime = 0;
-      audio.play().catch(e => console.error('Error playing errorSound:', e));
+    }
+
+    if (audio) {
+        audio.currentTime = 0;
+        audio.play().catch(e => console.error(`Error playing ${type} sound:`, e));
     }
   }, [goodAnswerSound, cashRegisterSound, errorSound, setGoodAnswerSound, setCashRegisterSound, setErrorSound]);
 
@@ -358,6 +379,7 @@ export default function PetitAdamPage() {
       isCorrect = checkAnswer(correctVerbIndices);
 
       if (isCorrect) {
+        setVerbsFoundCount(prev => prev + 1);
         setLastCorrectStage('verb');
         setStatus('feedback_correct');
         setShowFireworks(true);
@@ -369,7 +391,7 @@ export default function PetitAdamPage() {
           setCurrentQuestionAnimKey(prevKey => prevKey + 1); 
         }, 1500); 
       } else {
-        setMistakeCount(prev => prev + 1);
+        setVerbErrorsCount(prev => prev + 1);
         setStatus('feedback_incorrect_verb');
         playSound('error');
         setSelectedIndices([]); 
@@ -381,6 +403,7 @@ export default function PetitAdamPage() {
       isCorrect = checkAnswer(correctSubjectIndices);
 
       if (isCorrect) {
+        setSubjectsFoundCount(prev => prev + 1);
         setLastCorrectStage('subject');
         setStatus('feedback_correct');
         setShowFireworks(true);
@@ -397,7 +420,7 @@ export default function PetitAdamPage() {
           }
         }, 1500); 
       } else {
-        setMistakeCount(prev => prev + 1);
+        setSubjectErrorsCount(prev => prev + 1);
         setStatus('feedback_incorrect_subject');
         playSound('error');
         setSelectedIndices([]); 
@@ -456,31 +479,25 @@ export default function PetitAdamPage() {
           data-ai-hint="child drawing"
           priority
         />
-        <div className={cn(
-          "flex items-center bg-card text-card-foreground p-2 sm:p-3 rounded-lg shadow-lg", 
-          "transition-transform duration-300 ease-in-out",
-          isScoreAnimating && "scale-110"
-        )}>
-          {/* Score part */}
-          <Image
-            src="/images/coin.png"
-            alt="Points"
-            width={28} 
-            height={28}
-            className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7" 
-            data-ai-hint="coin money"
-          />
-          <span className="ml-1 sm:ml-2 text-xl sm:text-2xl md:text-3xl font-bold text-primary">{score}</span>
-
-          {/* Separator */}
-          <span className="mx-2 sm:mx-3 text-muted-foreground text-xl sm:text-2xl md:text-3xl">&bull;</span>
-
-          {/* Mistake Counter part */}
-          <XCircle className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-destructive" />
-          <span className="ml-1 sm:ml-1.5 text-xl sm:text-2xl md:text-3xl font-bold text-destructive">
-            {mistakeCount}
-          </span>
-        </div>
+        <Button
+            variant="outline"
+            onClick={() => setIsStatsDialogOpen(true)}
+            className={cn(
+              "flex items-center bg-card text-card-foreground p-2 sm:p-3 rounded-lg shadow-lg",
+              "transition-transform duration-300 ease-in-out hover:scale-105",
+              isScoreAnimating && "scale-110"
+            )}
+          >
+            <Image
+              src="/images/coin.png"
+              alt="Points"
+              width={28}
+              height={28}
+              className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7"
+              data-ai-hint="coin money"
+            />
+            <span className="ml-1 sm:ml-2 text-xl sm:text-2xl md:text-3xl font-bold text-primary">{score}</span>
+        </Button>
       </header>
 
       <Card className="w-full max-w-3xl shadow-2xl rounded-xl overflow-hidden transition-all duration-300">
@@ -583,7 +600,59 @@ export default function PetitAdamPage() {
       <footer className="mt-6 sm:mt-8 text-xs sm:text-sm text-muted-foreground">
         Appuyez sur les mots pour les sélectionner.
       </footer>
+
+      <Dialog open={isStatsDialogOpen} onOpenChange={setIsStatsDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl text-center">Statistiques du Jeu</DialogTitle>
+            <DialogDescription className="text-center text-muted-foreground">
+              Voici votre performance jusqu'à présent.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 items-center gap-4">
+              <p className="text-right font-medium">Verbes trouvés :</p>
+              <p className="text-left text-lg font-semibold text-green-600">{verbsFoundCount}</p>
+            </div>
+            <div className="grid grid-cols-2 items-center gap-4">
+              <p className="text-right font-medium">Sujets trouvés :</p>
+              <p className="text-left text-lg font-semibold text-green-600">{subjectsFoundCount}</p>
+            </div>
+            <div className="grid grid-cols-2 items-center gap-4">
+              <p className="text-right font-medium">Erreurs (Verbe) :</p>
+              <p className="text-left text-lg font-semibold text-red-600">{verbErrorsCount}</p>
+            </div>
+            <div className="grid grid-cols-2 items-center gap-4">
+              <p className="text-right font-medium">Erreurs (Sujet) :</p>
+              <p className="text-left text-lg font-semibold text-red-600">{subjectErrorsCount}</p>
+            </div>
+             <hr className="my-2"/>
+            <div className="grid grid-cols-2 items-center gap-4">
+              <p className="text-right font-medium">Total Erreurs :</p>
+              <p className="text-left text-lg font-semibold text-red-600">{verbErrorsCount + subjectErrorsCount}</p>
+            </div>
+            <div className="grid grid-cols-2 items-center gap-4">
+              <p className="text-right font-medium">Phrases Réussies :</p>
+              <p className="text-left text-lg font-semibold text-primary">{subjectsFoundCount}</p>
+            </div>
+            <div className="grid grid-cols-2 items-center gap-4">
+              <p className="text-right font-medium">Score Total :</p>
+              <p className="text-left text-lg font-semibold text-primary">{score}</p>
+            </div>
+          </div>
+          <DialogFooter className="sm:justify-center">
+            <DialogClose asChild>
+              <Button type="button" variant="secondary">
+                Fermer
+              </Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
 
+
+    
