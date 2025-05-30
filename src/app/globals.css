@@ -199,13 +199,9 @@ body {
   }
 
   .text-karaoke-glow {
-    background-color: hsl(var(--primary-foreground)); /* Text fill color (white) */
-    color: transparent;
-    -webkit-background-clip: text;
-    background-clip: text;
-    text-shadow: 0 0 7px hsl(var(--primary)), /* Blue glow */
-                 0 0 12px hsl(var(--primary)),
-                 0 0 20px hsl(var(--primary));
+    color: hsl(var(--primary-foreground)); /* White text */
+    text-shadow: 0 0 8px hsl(var(--primary)), /* Blue glow */
+                 0 0 15px hsl(var(--primary)); /* Softer, wider blue glow */
   }
 }
 

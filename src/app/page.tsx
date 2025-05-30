@@ -35,7 +35,7 @@ export default function HomePage() {
         <div className="grid grid-cols-1 gap-6">
           <Link href={`${pathPrefix}/games/verb-subject-finder`} passHref>
             <Card className="hover:shadow-xl transition-shadow duration-300 cursor-pointer bg-card/80 backdrop-blur-sm">
-              <CardHeader>
+              <CardHeader className="px-6 pt-6 pb-2"> {/* Reduced bottom padding */}
                 <div className="flex items-center justify-center mb-4">
                    <Image
                     src={`${pathPrefix}/images/game-icon-verb-subject.png`}
@@ -46,7 +46,7 @@ export default function HomePage() {
                     data-ai-hint="notebook pencil"
                   />
                 </div>
-                <CardTitle className="text-2xl font-semibold text-primary text-center font-question">
+                <CardTitle className="text-2xl font-semibold text-card-foreground text-center font-question"> {/* Changed color */}
                   Trouve le Verbe et le Sujet
                 </CardTitle>
               </CardHeader>
