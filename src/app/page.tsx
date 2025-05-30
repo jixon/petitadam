@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { WordChip } from '@/components/game/WordChip';
 import { FireworksAnimation } from '@/components/animations/FireworksAnimation';
 import { Progress } from "@/components/ui/progress";
-import { Brain, MessageCircleQuestion, Loader2, RefreshCw, SparklesIcon as SparklesLucide, Info } from 'lucide-react';
+import { Brain, MessageCircleQuestion, Loader2, RefreshCw, SparklesIcon as SparklesLucide, Info, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Dialog,
@@ -87,7 +87,6 @@ export default function PetitAdamPage() {
   const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
   const [score, setScore] = useState(0);
   
-  // New detailed stats
   const [verbsFoundCount, setVerbsFoundCount] = useState(0);
   const [subjectsFoundCount, setSubjectsFoundCount] = useState(0);
   const [verbErrorsCount, setVerbErrorsCount] = useState(0);
@@ -115,60 +114,63 @@ export default function PetitAdamPage() {
   useEffect(() => {
     setHasMounted(true);
   }, []);
-
+  
   const playSound = useCallback((type: 'good-answer' | 'cash-register' | 'error') => {
     let audio: HTMLAudioElement | null = null;
     let soundPath = '';
 
     if (type === 'good-answer') {
+      if (!goodAnswerSound) {
+        try {
+          const newAudio = new Audio('/sounds/good-answer.mp3');
+          newAudio.preload = 'auto';
+          setGoodAnswerSound(newAudio);
+          audio = newAudio;
+        } catch (e) {
+          console.error(`Error CREATING ${type} sound:`, e);
+          return;
+        }
+      } else {
         audio = goodAnswerSound;
-        soundPath = '/sounds/good-answer.mp3';
-        if (!audio) {
-            try {
-                const newAudio = new Audio(soundPath);
-                newAudio.preload = 'auto';
-                setGoodAnswerSound(newAudio);
-                audio = newAudio;
-            } catch (e) {
-                console.error(`Error CREATING ${type} sound:`, e);
-                return;
-            }
-        }
+      }
     } else if (type === 'cash-register') {
+      if (!cashRegisterSound) {
+        try {
+          const newAudio = new Audio('/sounds/cash-register.mp3');
+          newAudio.preload = 'auto';
+          setCashRegisterSound(newAudio);
+          audio = newAudio;
+        } catch (e) {
+          console.error(`Error CREATING ${type} sound:`, e);
+          return;
+        }
+      } else {
         audio = cashRegisterSound;
-        soundPath = '/sounds/cash-register.mp3';
-        if (!audio) {
-            try {
-                const newAudio = new Audio(soundPath);
-                newAudio.preload = 'auto';
-                setCashRegisterSound(newAudio);
-                audio = newAudio;
-            } catch (e) {
-                console.error(`Error CREATING ${type} sound:`, e);
-                return;
-            }
-        }
+      }
     } else if (type === 'error') {
-        audio = errorSound;
-        soundPath = '/sounds/error-sound.mp3';
-         if (!audio) {
-            try {
-                const newAudio = new Audio(soundPath);
-                newAudio.preload = 'auto';
-                setErrorSound(newAudio);
-                audio = newAudio;
-            } catch (e) {
-                console.error(`Error CREATING ${type} sound:`, e);
-                return;
-            }
+      if (!errorSound) {
+        try {
+          const newAudio = new Audio('/sounds/error-sound.mp3');
+          newAudio.preload = 'auto';
+          setErrorSound(newAudio);
+          audio = newAudio;
+        } catch (e) {
+          console.error(`Error CREATING ${type} sound:`, e);
+          return;
         }
+      } else {
+        audio = errorSound;
+      }
     }
 
     if (audio) {
-        audio.currentTime = 0;
-        audio.play().catch(e => console.error(`Error playing ${type} sound:`, e));
+      audio.currentTime = 0;
+      audio.play().catch(e => console.error(`Error playing ${type} sound from path ${soundPath}:`, e));
+    } else {
+         console.error(`Audio object for ${type} is null or not ready.`);
     }
   }, [goodAnswerSound, cashRegisterSound, errorSound, setGoodAnswerSound, setCashRegisterSound, setErrorSound]);
+
 
   useEffect(() => {
     setStatus('initial_loading');
@@ -488,6 +490,7 @@ export default function PetitAdamPage() {
             className={cn(
               "relative flex items-center bg-card text-card-foreground p-5 sm:p-6 rounded-lg shadow-lg", 
               "transition-transform duration-300 ease-in-out hover:scale-105",
+              "hover:bg-card hover:text-card-foreground", // Override default outline hover
               isScoreAnimating && "scale-110"
             )}
           >
@@ -657,3 +660,4 @@ export default function PetitAdamPage() {
     </div>
   );
 }
+
