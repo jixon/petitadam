@@ -485,7 +485,7 @@ export default function VerbSubjectFinderPage() {
       
       <header className="w-full flex justify-between items-center mb-6 md:mb-10">
         <Link href={`${pathPrefix}/`} passHref>
-          <Image
+           <Image
             src={`${pathPrefix}/images/petit-adam-logo.png`} 
             alt="Petit Adam Logo"
             width={150} 
@@ -496,7 +496,6 @@ export default function VerbSubjectFinderPage() {
           />
         </Link>
         <div className="flex items-center">
-            {/* Score box will be moved into the Card */}
             <Link href={`${pathPrefix}/`} passHref>
                 <Button variant="ghost" size="icon" aria-label="Retour à l'accueil" className="ml-2 sm:ml-4">
                     <Home className="h-5 w-5 sm:h-6 sm:h-6" />
@@ -505,12 +504,12 @@ export default function VerbSubjectFinderPage() {
         </div>
       </header>
 
-      <Card className="w-full max-w-3xl shadow-2xl rounded-xl overflow-hidden transition-all duration-300 relative">
+      <Card className="w-full max-w-3xl shadow-2xl rounded-xl transition-all duration-300 relative">
         <Button
             variant="outline"
             onClick={() => setIsStatsDialogOpen(true)}
             className={cn(
-            "absolute top-2 right-2 sm:top-4 sm:right-4 z-10 flex items-center bg-card text-card-foreground px-3 py-4 sm:px-4 sm:py-5 md:px-5 md:py-7 rounded-lg shadow-lg", 
+            "absolute -top-3 right-3 sm:-top-4 sm:right-4 z-10 flex items-center bg-card text-card-foreground px-3 py-4 sm:px-4 sm:py-5 md:px-5 md:py-7 rounded-lg shadow-lg", 
             "transition-transform duration-300 ease-in-out hover:scale-105",
             "hover:bg-card hover:text-card-foreground", 
             isScoreAnimating && "scale-110"
