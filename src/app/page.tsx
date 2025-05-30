@@ -204,36 +204,24 @@ export default function PetitAdamPage() {
   }, []); 
 
   const processPhrase = (phrase: string): string[] => {
-    // Regex: 
-    // 1. `[ldsqjntm]'`: Matches common French elisions (l', d', s', qu', j', n', t', m') as separate tokens.
-    // 2. `(?:[\p{L}\p{N}-]['’]?)+`: Matches words. It looks for sequences of:
-    //    - A Unicode letter (`\p{L}`), a Unicode number (`\p{N}`), or a hyphen (`-`).
-    //    - Optionally followed by an apostrophe (standard ' or curly ’).
-    //    - This entire group `(?: ... )` is repeated one or more times (`+`) to form the word.
-    //    This handles words like "bébé", "écrit", "aujourd'hui", "maîtresse".
-    // 3. `[.,!?;:]*`: Matches zero or more trailing punctuation marks and attaches them to the preceding word.
-    // 4. `\S`: As a fallback, matches any non-whitespace character if the preceding patterns don't.
-    // `gu` flags: global (match all occurrences) and unicode (enable \p{} properties).
     const wordsArray = phrase.match(/[ldsqjntm]'|(?:[\p{L}\p{N}-]['’]?)+[.,!?;:]*|\S/gu) || [];
     
     const processedWords: string[] = [];
     let i = 0;
     while (i < wordsArray.length) {
         const currentWord = wordsArray[i];
-        // Check for specific elisions like "l'", "d'", "s'", "qu'" followed by a vowel-starting word
         if (/^(l'|d'|s'|qu')$/i.test(currentWord) && 
             i + 1 < wordsArray.length && 
-            wordsArray[i+1].length > 0 && // Ensure next word is not empty
-            /^\p{L}/u.test(wordsArray[i+1].charAt(0))) { // Test first char of next word for Unicode letter
+            wordsArray[i+1].length > 0 && 
+            /^\p{L}/u.test(wordsArray[i+1].charAt(0))) { 
             processedWords.push(currentWord + wordsArray[i+1]);
             i += 2;
         } 
-        // Check for "n'" as in "n'est"
         else if (currentWord.toLowerCase() === "n'" && 
                  i + 1 < wordsArray.length && 
                  /^(est|ai|as|a|avons|avez|ont|étais|était|étions|étiez|étaient|suis|es|sommes|êtes|sont)/i.test(wordsArray[i+1])) {
-             processedWords.push(currentWord); // Push "n'"
-             processedWords.push(wordsArray[i+1]); // Push the verb like "est"
+             processedWords.push(currentWord); 
+             processedWords.push(wordsArray[i+1]); 
              i+=2;
         }
         else {
@@ -623,7 +611,9 @@ export default function PetitAdamPage() {
       </footer>
 
       <Dialog open={isStatsDialogOpen} onOpenChange={setIsStatsDialogOpen}>
-        <DialogContent className="w-[90vw] sm:max-w-md sm:rounded-lg">
+        <DialogContent 
+           className="w-[95vw] max-h-[85vh] top-4 translate-y-0 data-[state=closed]:slide-out-to-top-[calc(env(safe-area-inset-top)_+_1rem)] data-[state=open]:slide-in-from-top-[calc(env(safe-area-inset-top)_+_1rem)] sm:max-w-md sm:top-[50%] sm:translate-y-[-50%] sm:data-[state=closed]:slide-out-to-top-[48%] sm:data-[state=open]:slide-in-from-top-[48%]"
+        >
           <DialogHeader>
             <DialogTitle className="text-2xl text-center">Statistiques du Jeu</DialogTitle>
             <DialogDescription className="text-center text-muted-foreground">
@@ -673,3 +663,4 @@ export default function PetitAdamPage() {
     </div>
   );
 }
+
