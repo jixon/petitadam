@@ -110,12 +110,13 @@ export default function PetitAdamPage() {
   const [allSentences, setAllSentences] = useState<SentenceData[]>([]);
   const [lastUsedSentenceIndex, setLastUsedSentenceIndex] = useState<number | null>(null);
   const [initialSentenceLoaded, setInitialSentenceLoaded] = useState(false);
+  const [sentenceLoadingError, setSentenceLoadingError] = useState<string | null>(null);
   
   useEffect(() => {
     setHasMounted(true);
   }, []);
   
- const playSound = useCallback((type: 'good-answer' | 'cash-register' | 'error') => {
+  const playSound = useCallback((type: 'good-answer' | 'cash-register' | 'error') => {
     let audioToPlay: HTMLAudioElement | null = null;
 
     if (type === 'good-answer') {
@@ -126,7 +127,7 @@ export default function PetitAdamPage() {
           setGoodAnswerSound(newAudio);
           audioToPlay = newAudio;
         } catch (e) {
-          console.error(`LOG POINT 29A - Error CREATING good-answer sound:`, e);
+          console.error(`Error CREATING good-answer sound:`, e);
           return;
         }
       } else {
@@ -140,7 +141,7 @@ export default function PetitAdamPage() {
           setCashRegisterSound(newAudio);
           audioToPlay = newAudio;
         } catch (e) {
-          console.error(`LOG POINT 29B - Error CREATING cash-register sound:`, e);
+          console.error(`Error CREATING cash-register sound:`, e);
           return;
         }
       } else {
@@ -154,7 +155,7 @@ export default function PetitAdamPage() {
           setErrorSound(newAudio);
           audioToPlay = newAudio;
         } catch (e) {
-          console.error(`LOG POINT 29C - Error CREATING error sound:`, e);
+          console.error(`Error CREATING error sound:`, e);
           return;
         }
       } else {
@@ -164,7 +165,7 @@ export default function PetitAdamPage() {
 
     if (audioToPlay) {
       audioToPlay.currentTime = 0;
-      audioToPlay.play().catch(e => console.error(`LOG POINT 29D - Error playing ${type} sound:`, e));
+      audioToPlay.play().catch(e => console.error(`Error playing ${type} sound:`, e));
     }
   }, [goodAnswerSound, cashRegisterSound, errorSound, setGoodAnswerSound, setCashRegisterSound, setErrorSound]);
 
@@ -172,6 +173,7 @@ export default function PetitAdamPage() {
   useEffect(() => {
     setStatus('initial_loading');
     setLoadingProgressValue(0);
+    setSentenceLoadingError(null);
     
     fetch('/data/sentences.json')
       .then(res => {
@@ -184,11 +186,13 @@ export default function PetitAdamPage() {
         if (data && data.length > 0) {
           setAllSentences(data);
         } else {
+          setSentenceLoadingError("Aucune phrase n'a pu être chargée. Utilisation des phrases de secours.");
           setAllSentences(fallbackSentences);
         }
       })
       .catch(error => {
         console.error(`Failed to fetch sentences.json: ${error.message}`, error);
+        setSentenceLoadingError(`Erreur de chargement des phrases : ${error.message}. Utilisation des phrases de secours.`);
         setAllSentences(fallbackSentences);
       });
 
@@ -301,6 +305,7 @@ export default function PetitAdamPage() {
         progressIntervalId = undefined;
       }
       setLoadingProgressValue(100); 
+      setSentenceLoadingError(`Erreur lors de la préparation de la phrase: ${error.message}. Utilisation d'une phrase de secours.`);
 
       const fallbackSentenceData = fallbackSentences[Math.floor(Math.random() * fallbackSentences.length)];
       const processedFallbackWords = processPhrase(fallbackSentenceData.phrase);
@@ -511,11 +516,17 @@ export default function PetitAdamPage() {
       <Card className="w-full max-w-3xl shadow-2xl rounded-xl overflow-hidden transition-all duration-300">
         <CardContent className="p-4 sm:p-6 md:p-10">
           <div className="mb-4 sm:mb-6 md:mb-8 min-h-[60px] sm:min-h-[80px] md:min-h-[100px] flex flex-col items-center justify-center">
-            { (status === 'loading' || status === 'initial_loading') ? (
+            { (status === 'loading' || status === 'initial_loading') && !sentenceLoadingError ? (
               <div className="flex flex-col items-center justify-center text-center gap-2 sm:gap-3 w-full">
                 <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-primary animate-spin" />
                 <p className="text-base sm:text-lg text-muted-foreground mt-2">{questionText}</p>
                 <Progress value={loadingProgressValue} className="w-3/4 max-w-xs mt-2" />
+              </div>
+            ) : sentenceLoadingError ? (
+              <div className="flex flex-col items-center justify-center text-center gap-2 sm:gap-3 w-full text-destructive">
+                <XCircle className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12" />
+                <p className="text-base sm:text-lg mt-2">{sentenceLoadingError}</p>
+                <p className="text-xs text-muted-foreground">Le jeu utilisera des phrases de secours.</p>
               </div>
             ) : (
               <>
@@ -564,7 +575,7 @@ export default function PetitAdamPage() {
               ))}
             </div>
           )}
-           {(words.length === 0 && status !== 'loading' && status !== 'initial_loading') && (
+           {(words.length === 0 && status !== 'loading' && status !== 'initial_loading' && !sentenceLoadingError) && (
              <div className="min-h-[80px] sm:min-h-[100px] md:min-h-[150px] mb-4 sm:mb-6 md:mb-8"> </div>
            )}
 
@@ -664,4 +675,3 @@ export default function PetitAdamPage() {
     </div>
   );
 }
-
