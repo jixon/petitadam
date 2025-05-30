@@ -125,9 +125,10 @@ export default function PetitAdamPage() {
         soundPath = '/sounds/good-answer.mp3';
         if (!audio) {
             try {
-                audio = new Audio(soundPath);
-                audio.preload = 'auto';
-                setGoodAnswerSound(audio);
+                const newAudio = new Audio(soundPath);
+                newAudio.preload = 'auto';
+                setGoodAnswerSound(newAudio);
+                audio = newAudio;
             } catch (e) {
                 console.error(`Error CREATING ${type} sound:`, e);
                 return;
@@ -138,9 +139,10 @@ export default function PetitAdamPage() {
         soundPath = '/sounds/cash-register.mp3';
         if (!audio) {
             try {
-                audio = new Audio(soundPath);
-                audio.preload = 'auto';
-                setCashRegisterSound(audio);
+                const newAudio = new Audio(soundPath);
+                newAudio.preload = 'auto';
+                setCashRegisterSound(newAudio);
+                audio = newAudio;
             } catch (e) {
                 console.error(`Error CREATING ${type} sound:`, e);
                 return;
@@ -151,9 +153,10 @@ export default function PetitAdamPage() {
         soundPath = '/sounds/error-sound.mp3';
          if (!audio) {
             try {
-                audio = new Audio(soundPath);
-                audio.preload = 'auto';
-                setErrorSound(audio);
+                const newAudio = new Audio(soundPath);
+                newAudio.preload = 'auto';
+                setErrorSound(newAudio);
+                audio = newAudio;
             } catch (e) {
                 console.error(`Error CREATING ${type} sound:`, e);
                 return;
@@ -483,7 +486,7 @@ export default function PetitAdamPage() {
             variant="outline"
             onClick={() => setIsStatsDialogOpen(true)}
             className={cn(
-              "relative flex items-center bg-card text-card-foreground p-4 sm:p-5 rounded-lg shadow-lg", 
+              "relative flex items-center bg-card text-card-foreground p-5 sm:p-6 rounded-lg shadow-lg", 
               "transition-transform duration-300 ease-in-out hover:scale-105",
               isScoreAnimating && "scale-110"
             )}
@@ -496,7 +499,7 @@ export default function PetitAdamPage() {
               className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7"
               data-ai-hint="coin money"
             />
-            <span className="ml-1 sm:ml-2 text-xl sm:text-2xl md:text-3xl font-bold text-primary">{score}</span>
+            <span className="ml-1 sm:ml-2 mr-2 sm:mr-3 text-xl sm:text-2xl md:text-3xl font-bold text-primary">{score}</span>
             <Info className="absolute top-1.5 right-1.5 w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground/70" />
         </Button>
       </header>
@@ -654,6 +657,3 @@ export default function PetitAdamPage() {
     </div>
   );
 }
-
-
-    
