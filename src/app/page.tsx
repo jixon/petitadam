@@ -459,31 +459,28 @@ export default function PetitAdamPage() {
           />
         </div>
         
-        <div className="flex items-center space-x-2 sm:space-x-3">
-            <div className={cn(
-              "flex items-center bg-primary text-primary-foreground p-2 sm:p-3 rounded-lg shadow-lg",
-              "transition-transform duration-300 ease-in-out",
-              isScoreAnimating && "scale-110"
-            )}>
-              <Image 
-                src="/images/coin.png"
-                alt="Coin"
-                width={24} 
-                height={24}
-                className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8"
-                data-ai-hint="coin money"
-              />
-              <span className="ml-1 sm:ml-2 text-xl sm:text-2xl md:text-3xl font-bold">{score}</span>
-            </div>
-            <div className={cn(
-                "flex items-center bg-destructive/10 text-destructive p-1.5 sm:p-2 rounded-lg shadow-lg",
-            )}>
-                <XCircle 
-                  className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6"
-                  data-ai-hint="mistake error"
-                />
-                <span className="ml-1 sm:ml-1.5 text-base sm:text-lg md:text-xl font-bold">{mistakeCount}</span>
-            </div>
+        <div className={cn(
+          "flex items-center bg-card text-card-foreground p-2 sm:p-3 rounded-lg shadow-lg",
+          "transition-transform duration-300 ease-in-out",
+          isScoreAnimating && "scale-110"
+        )}>
+          <Image 
+            src="/images/coin.png"
+            alt="Points"
+            width={24} 
+            height={24}
+            className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8"
+            data-ai-hint="coin gold"
+          />
+          <span className="ml-1 sm:ml-2 text-xl sm:text-2xl md:text-3xl font-bold text-primary">{score}</span>
+          
+          <span className="mx-2 sm:mx-3 text-lg sm:text-xl md:text-2xl text-muted-foreground">|</span>
+          
+          <XCircle 
+            className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-destructive"
+            data-ai-hint="error cross"
+          />
+          <span className="ml-1 sm:ml-1.5 text-base sm:text-lg md:text-xl font-bold text-destructive">{mistakeCount}</span>
         </div>
       </header>
 
@@ -590,5 +587,3 @@ export default function PetitAdamPage() {
     </div>
   );
 }
-
-    
