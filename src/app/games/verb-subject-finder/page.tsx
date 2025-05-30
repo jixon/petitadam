@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { WordChip } from '@/components/game/WordChip';
 import { FireworksAnimation } from '@/components/animations/FireworksAnimation';
 import { Progress } from "@/components/ui/progress";
-import { Brain, MessageCircleQuestion, Loader2, RefreshCw, SparklesIcon as SparklesLucide, Info, XCircle, Home } from 'lucide-react';
+import { Brain, MessageCircleQuestion, Loader2, RefreshCw, SparklesIcon as SparklesLucide, Info, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Dialog,
@@ -500,9 +500,15 @@ export default function VerbSubjectFinderPage() {
                 <Button 
                     variant="ghost" 
                     aria-label="Retour à l'accueil" 
-                    className="ml-2 sm:ml-4 hover:bg-transparent hover:text-foreground h-20 w-20 p-3 hover:animate-shake"
+                    className="ml-2 sm:ml-4 hover:bg-transparent hover:text-foreground h-20 w-20 p-1 hover:animate-shake"
                 >
-                    <Home className="h-14 w-14" />
+                     <Image
+                        src={`${pathPrefix}/images/home-btn.png`}
+                        alt="Retour à l'accueil"
+                        width={50}
+                        height={50}
+                        data-ai-hint="home button"
+                      />
                 </Button>
             </Link>
         </div>
