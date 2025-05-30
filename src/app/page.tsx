@@ -495,7 +495,7 @@ export default function PetitAdamPage() {
             variant="outline"
             onClick={() => setIsStatsDialogOpen(true)}
             className={cn(
-              "relative flex items-center bg-card text-card-foreground p-5 sm:p-6 rounded-lg shadow-lg", 
+              "relative flex items-center bg-card text-card-foreground px-5 sm:px-6 py-7 sm:py-8 rounded-lg shadow-lg", 
               "transition-transform duration-300 ease-in-out hover:scale-105",
               "hover:bg-card hover:text-card-foreground", 
               isScoreAnimating && "scale-110"
@@ -598,7 +598,7 @@ export default function PetitAdamPage() {
             </div>
             {(status === 'asking_verb' || status === 'asking_subject' || status === 'feedback_incorrect_verb' || status === 'feedback_incorrect_subject') && (
               <>
-                <div className="flex items-center mt-2 text-xs sm:text-sm text-muted-foreground">
+                 <div className="flex items-center mt-2 text-xs sm:text-sm text-muted-foreground">
                   <Info className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   <span>Appuyer sur un ou plusieurs mots pour les sélectionner.</span>
                 </div>
