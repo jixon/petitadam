@@ -1,7 +1,11 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
   /* config options here */
+  basePath: '/petitadam',
+  assetPrefix: '/petitadam',
+  output: 'export',
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -17,6 +21,8 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
+    // Required for static export with next/image
+    unoptimized: true,
   },
 };
 
