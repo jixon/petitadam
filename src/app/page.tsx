@@ -96,29 +96,29 @@ export default function PetitAdamPage() {
     if (type === 'success') {
       if (cashRegisterSound) {
         cashRegisterSound.currentTime = 0;
-        cashRegisterSound.play().catch(e => console.error('Error playing existing cashRegisterSound:', e));
+        cashRegisterSound.play().catch(e => console.error('LOG POINT 28D - Error playing existing cashRegisterSound:', e));
       } else {
         try {
           const audio = new Audio('/sounds/cash-register.mp3');
           audio.preload = 'auto';
           setCashRegisterSound(audio); 
-          audio.play().catch(e => console.error('Error playing new cashRegisterSound:', e));
+          audio.play().catch(e => console.error('LOG POINT 28E - Error playing new cashRegisterSound:', e));
         } catch (e) {
-          console.error('Error creating cashRegisterSound on demand:', e);
+          console.error('LOG POINT 28F - Error creating cashRegisterSound on demand:', e);
         }
       }
     } else if (type === 'error') {
       if (errorSound) {
         errorSound.currentTime = 0;
-        errorSound.play().catch(e => console.error('Error playing existing errorSound:', e));
+        errorSound.play().catch(e => console.error('LOG POINT 31C/38C - Error playing existing errorSound:', e));
       } else {
         try {
           const audio = new Audio('/sounds/error-sound.mp3');
           audio.preload = 'auto';
           setErrorSound(audio); 
-          audio.play().catch(e => console.error('Error playing new errorSound:', e));
+          audio.play().catch(e => console.error('LOG POINT 31D/38D - Error playing new errorSound:', e));
         } catch (e) {
-          console.error('Error creating errorSound on demand:', e);
+          console.error('LOG POINT 31E/38E - Error creating errorSound on demand:', e);
         }
       }
     }
@@ -408,40 +408,44 @@ export default function PetitAdamPage() {
       {showFireworks && <FireworksAnimation />}
       
       <header className="w-full flex justify-between items-center mb-6 md:mb-10">
-        <Image 
-          src="/images/petit-adam-logo.png" 
-          alt="Petit Adam Logo" 
-          width={200}
-          height={158} 
-          className="drop-shadow-md"
-          priority
-          data-ai-hint="child education"
-        />
-        <div className={cn(
-          "flex items-center bg-primary text-primary-foreground p-2 sm:p-3 rounded-lg shadow-lg",
-          "transition-transform duration-300 ease-in-out",
-          isScoreAnimating && "scale-110"
-        )}>
-          <Star className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-300" />
-          <span className="ml-2 text-2xl sm:text-3xl font-bold">{score}</span>
+        <div className="w-1/3 flex justify-start">
+          <Image 
+            src="/images/petit-adam-logo.png" 
+            alt="Petit Adam Logo" 
+            width={120} 
+            height={95} 
+            className="drop-shadow-md sm:w-[150px] sm:h-[118px] md:w-[200px] md:h-[158px]"
+            priority
+            data-ai-hint="child education"
+          />
+        </div>
+        <div className="w-1/3 flex justify-end">
+          <div className={cn(
+            "flex items-center bg-primary text-primary-foreground p-2 sm:p-3 rounded-lg shadow-lg",
+            "transition-transform duration-300 ease-in-out",
+            isScoreAnimating && "scale-110"
+          )}>
+            <Star className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-yellow-300" />
+            <span className="ml-1 sm:ml-2 text-xl sm:text-2xl md:text-3xl font-bold">{score}</span>
+          </div>
         </div>
       </header>
 
       <Card className="w-full max-w-3xl shadow-2xl rounded-xl overflow-hidden transition-all duration-300">
-        <CardContent className="p-6 sm:p-8 md:p-10">
-          <div className="mb-6 md:mb-8 min-h-[80px] sm:min-h-[100px] flex flex-col items-center justify-center">
+        <CardContent className="p-4 sm:p-6 md:p-10">
+          <div className="mb-4 sm:mb-6 md:mb-8 min-h-[60px] sm:min-h-[80px] md:min-h-[100px] flex flex-col items-center justify-center">
             { (status === 'loading' || status === 'initial_loading') ? (
-              <div className="flex flex-col items-center justify-center text-center gap-3 w-full">
-                <Loader2 className="w-10 h-10 sm:w-12 sm:h-12 text-primary animate-spin" />
-                <p className="text-lg text-muted-foreground mt-2">{questionText}</p>
+              <div className="flex flex-col items-center justify-center text-center gap-2 sm:gap-3 w-full">
+                <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-primary animate-spin" />
+                <p className="text-base sm:text-lg text-muted-foreground mt-2">{questionText}</p>
                 <Progress value={loadingProgressValue} className="w-3/4 max-w-xs mt-2" />
               </div>
             ) : (
               <>
-                <div className="flex items-center text-2xl sm:text-3xl md:text-4xl font-semibold mb-2 text-secondary-foreground">
-                  { (status === 'asking_verb' || status === 'asking_subject') && <Brain className="w-8 h-8 sm:w-10 sm:h-10 mr-3 text-primary" /> }
-                  { isFeedbackIncorrect && <MessageCircleQuestion className="w-8 h-8 sm:w-10 sm:h-10 mr-3 text-destructive" /> }
-                  { status === 'feedback_correct' && !showFireworks && <SparklesLucide className="w-8 h-8 sm:w-10 sm:h-10 mr-3 text-accent" /> }
+                <div className="flex items-center text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold mb-1 sm:mb-2 text-secondary-foreground">
+                  { (status === 'asking_verb' || status === 'asking_subject') && <Brain className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 mr-2 sm:mr-3 text-primary" /> }
+                  { isFeedbackIncorrect && <MessageCircleQuestion className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 mr-2 sm:mr-3 text-destructive" /> }
+                  { status === 'feedback_correct' && !showFireworks && <SparklesLucide className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 mr-2 sm:mr-3 text-accent" /> }
                   
                   <h2 key={currentQuestionAnimKey}> 
                     {shouldApplyWavyAnimation
@@ -458,8 +462,8 @@ export default function PetitAdamPage() {
                     }
                   </h2>
                 </div>
-                {isFeedbackIncorrect && <p className="text-destructive text-lg">Essaie encore !</p>}
-                {status === 'feedback_correct' && !showFireworks && <p className="text-accent text-lg">Super !</p>}
+                {isFeedbackIncorrect && <p className="text-destructive text-base sm:text-lg">Essaie encore !</p>}
+                {status === 'feedback_correct' && !showFireworks && <p className="text-accent text-base sm:text-lg">Super !</p>}
               </>
             )}
           </div>
@@ -467,7 +471,7 @@ export default function PetitAdamPage() {
           {words.length > 0 && status !== 'loading' && status !== 'initial_loading' && (
             <div 
               className={cn(
-                "flex flex-wrap justify-center items-center gap-2 sm:gap-3 p-4 sm:p-6 mb-6 md:mb-8 min-h-[100px] sm:min-h-[150px] bg-secondary/30 rounded-lg",
+                "flex flex-wrap justify-center items-center gap-1.5 sm:gap-2 md:gap-3 p-3 sm:p-4 md:p-6 mb-4 sm:mb-6 md:mb-8 min-h-[80px] sm:min-h-[100px] md:min-h-[150px] bg-secondary/30 rounded-lg",
                 (isFeedbackIncorrect && status === 'feedback_incorrect_verb') && "animate-shake border-2 border-destructive",
                 (isFeedbackIncorrect && status === 'feedback_incorrect_subject') && "animate-shake border-2 border-destructive"
               )}
@@ -484,11 +488,11 @@ export default function PetitAdamPage() {
             </div>
           )}
            {(words.length === 0 && status !== 'loading' && status !== 'initial_loading') && (
-             <div className="min-h-[100px] sm:min-h-[150px] mb-6 md:mb-8"> </div>
+             <div className="min-h-[80px] sm:min-h-[100px] md:min-h-[150px] mb-4 sm:mb-6 md:mb-8"> </div>
            )}
 
           <div className="h-auto flex flex-col items-center justify-center">
-            <div className="h-[76px] flex items-center justify-center relative w-full sm:w-auto"> 
+            <div className="h-[60px] sm:h-[70px] md:h-[76px] flex items-center justify-center relative w-full sm:w-auto"> 
               {buttonParticles.map(particle => (
                 <div key={particle.id} className="button-particle" style={particle.style} />
               ))}
@@ -498,7 +502,7 @@ export default function PetitAdamPage() {
                   size="lg"
                   onClick={handleSubmit}
                   disabled={selectedIndices.length === 0 || status === 'loading' || status === 'initial_loading'}
-                  className="w-full sm:w-auto text-2xl sm:text-3xl px-10 py-6 sm:px-12 sm:py-7 rounded-xl shadow-lg transform hover:scale-105 transition-transform duration-200"
+                  className="w-full sm:w-auto text-xl sm:text-2xl md:text-3xl px-8 py-4 sm:px-10 sm:py-5 md:px-12 md:py-6 rounded-xl shadow-lg transform hover:scale-105 transition-transform duration-200"
                 >
                   Valider
                 </Button>
@@ -507,7 +511,7 @@ export default function PetitAdamPage() {
              {(status === 'asking_verb' || status === 'asking_subject' || status === 'feedback_incorrect_verb' || status === 'feedback_incorrect_subject') && (
               <Button
                 variant="link"
-                className="mt-4 text-muted-foreground text-sm"
+                className="mt-3 sm:mt-4 text-muted-foreground text-xs sm:text-sm"
                 onClick={() => {
                   if (status !== 'loading' && status !== 'initial_loading' && allSentences.length > 0) {
                     setSelectedIndices([]); 
@@ -516,7 +520,7 @@ export default function PetitAdamPage() {
                 }}
                 disabled={status === 'loading' || status === 'initial_loading' || allSentences.length === 0}
               >
-                <RefreshCw className="mr-2 h-4 w-4" />
+                <RefreshCw className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 Passer / Nouvelle phrase
               </Button>
             )}
@@ -524,7 +528,7 @@ export default function PetitAdamPage() {
         </CardContent>
       </Card>
 
-      <footer className="mt-8 text-sm text-muted-foreground">
+      <footer className="mt-6 sm:mt-8 text-xs sm:text-sm text-muted-foreground">
         Appuyez sur les mots pour les sélectionner.
       </footer>
     </div>

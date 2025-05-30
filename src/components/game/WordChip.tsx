@@ -25,11 +25,15 @@ export const WordChip: FC<WordChipProps> = ({
   return (
     <Button
       variant="outline"
-      size="lg"
+      size="lg" // Keep "lg" for consistent base padding from buttonVariants, then override
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'text-2xl md:text-3xl lg:text-4xl h-auto px-4 py-3 m-1 rounded-lg shadow-md transition-all duration-200 ease-in-out transform hover:scale-105',
+        'h-auto m-0.5 sm:m-1 rounded-md sm:rounded-lg shadow-sm sm:shadow-md transition-all duration-200 ease-in-out transform hover:scale-105',
+        // Responsive text size
+        'text-lg sm:text-xl md:text-2xl lg:text-3xl',
+        // Responsive padding
+        'px-3 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-3',
         isSelected && 'bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2',
         !isSelected && 'bg-card hover:bg-secondary',
         isCorrect && 'bg-accent text-accent-foreground animate-pulse',
