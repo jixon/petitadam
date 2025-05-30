@@ -41,7 +41,7 @@ interface SentenceData {
   verbe: string;
 }
 
-const pathPrefix = process.env.NEXT_PUBLIC_BASE_PATH || '';
+// const pathPrefix = process.env.NEXT_PUBLIC_BASE_PATH || ''; // Reverted
 
 const findPartIndices = (sentenceWords: string[], partToFind: string): number[] => {
   if (!partToFind || partToFind.trim() === "") {
@@ -124,7 +124,7 @@ export default function PetitAdamPage() {
     if (type === 'good-answer') {
       if (!goodAnswerSound) {
         try {
-          const newAudio = new Audio(`${pathPrefix}/sounds/good-answer.mp3`);
+          const newAudio = new Audio("/sounds/good-answer.mp3"); // Reverted pathPrefix
           newAudio.preload = 'auto';
           setGoodAnswerSound(newAudio);
           audioToPlay = newAudio;
@@ -138,7 +138,7 @@ export default function PetitAdamPage() {
     } else if (type === 'cash-register') {
       if (!cashRegisterSound) {
         try {
-          const newAudio = new Audio(`${pathPrefix}/sounds/cash-register.mp3`);
+          const newAudio = new Audio("/sounds/cash-register.mp3"); // Reverted pathPrefix
           newAudio.preload = 'auto';
           setCashRegisterSound(newAudio);
           audioToPlay = newAudio;
@@ -152,7 +152,7 @@ export default function PetitAdamPage() {
     } else if (type === 'error') {
       if (!errorSound) {
         try {
-          const newAudio = new Audio(`${pathPrefix}/sounds/error-sound.mp3`);
+          const newAudio = new Audio("/sounds/error-sound.mp3"); // Reverted pathPrefix
           newAudio.preload = 'auto';
           setErrorSound(newAudio);
           audioToPlay = newAudio;
@@ -177,7 +177,7 @@ export default function PetitAdamPage() {
     setLoadingProgressValue(0);
     setSentenceLoadingError(null);
     
-    fetch(`${pathPrefix}/data/sentences.json`)
+    fetch("/data/sentences.json") // Reverted pathPrefix
       .then(res => {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
@@ -200,7 +200,7 @@ export default function PetitAdamPage() {
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register(`${pathPrefix}/sw.js`).then(registration => {
+        navigator.serviceWorker.register("/sw.js").then(registration => { // Reverted pathPrefix
           // console.log(`SW registered: `, registration);
         }).catch(registrationError => {
           console.error(`SW registration failed: `, registrationError);
@@ -485,7 +485,7 @@ export default function PetitAdamPage() {
       
       <header className="w-full flex justify-between items-center mb-6 md:mb-10">
         <Image
-          src={`${pathPrefix}/images/petit-adam-logo.png`}
+          src="/images/petit-adam-logo.png" // Reverted pathPrefix
           alt="Petit Adam Logo"
           width={150} 
           height={118} 
@@ -504,7 +504,7 @@ export default function PetitAdamPage() {
             )}
           >
             <Image
-              src={`${pathPrefix}/images/coin.png`}
+              src="/images/coin.png" // Reverted pathPrefix
               alt="Points"
               width={28}
               height={28}
@@ -608,7 +608,7 @@ export default function PetitAdamPage() {
                   variant="link"
                   className="mt-3 sm:mt-4 text-muted-foreground text-xs sm:text-sm"
                   onClick={() => {
-                    if (allSentences.length > 0) {
+                     if (allSentences.length > 0) {
                       setSelectedIndices([]); 
                       fetchNewSentence();
                     }
