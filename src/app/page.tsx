@@ -102,47 +102,47 @@ export default function PetitAdamPage() {
 
   const playSound = useCallback((type: 'good-answer' | 'cash-register' | 'error') => {
     if (type === 'good-answer') {
-      if (goodAnswerSound) {
-        goodAnswerSound.currentTime = 0;
-        goodAnswerSound.play().catch(e => console.error('Error playing existing goodAnswerSound:', e));
-      } else {
+      let audio = goodAnswerSound;
+      if (!audio) {
         try {
-          const audio = new Audio('/sounds/good-answer.mp3');
+          audio = new Audio('/sounds/good-answer.mp3');
           audio.preload = 'auto';
-          setGoodAnswerSound(audio); 
-          audio.play().catch(e => console.error('Error playing new goodAnswerSound:', e));
+          setGoodAnswerSound(audio);
         } catch (e) {
           console.error('Error CREATING goodAnswerSound on demand:', e);
+          return;
         }
       }
+      audio.currentTime = 0;
+      audio.play().catch(e => console.error('Error playing goodAnswerSound:', e));
     } else if (type === 'cash-register') {
-      if (cashRegisterSound) {
-        cashRegisterSound.currentTime = 0;
-        cashRegisterSound.play().catch(e => console.error('Error playing existing cashRegisterSound:', e));
-      } else {
+      let audio = cashRegisterSound;
+      if (!audio) {
         try {
-          const audio = new Audio('/sounds/cash-register.mp3');
+          audio = new Audio('/sounds/cash-register.mp3');
           audio.preload = 'auto';
-          setCashRegisterSound(audio); 
-          audio.play().catch(e => console.error('Error playing new cashRegisterSound:', e));
+          setCashRegisterSound(audio);
         } catch (e) {
           console.error('Error creating cashRegisterSound on demand:', e);
+          return;
         }
       }
+      audio.currentTime = 0;
+      audio.play().catch(e => console.error('Error playing cashRegisterSound:', e));
     } else if (type === 'error') {
-      if (errorSound) {
-        errorSound.currentTime = 0;
-        errorSound.play().catch(e => console.error('Error playing existing errorSound:', e));
-      } else {
+      let audio = errorSound;
+      if (!audio) {
         try {
-          const audio = new Audio('/sounds/error-sound.mp3');
+          audio = new Audio('/sounds/error-sound.mp3');
           audio.preload = 'auto';
-          setErrorSound(audio); 
-          audio.play().catch(e => console.error('Error playing new errorSound:', e));
+          setErrorSound(audio);
         } catch (e) {
           console.error('Error creating errorSound on demand:', e);
+          return;
         }
       }
+      audio.currentTime = 0;
+      audio.play().catch(e => console.error('Error playing errorSound:', e));
     }
   }, [goodAnswerSound, cashRegisterSound, errorSound, setGoodAnswerSound, setCashRegisterSound, setErrorSound]);
 
@@ -474,13 +474,13 @@ export default function PetitAdamPage() {
           />
           <span className="ml-1 sm:ml-2 text-xl sm:text-2xl md:text-3xl font-bold text-primary">{score}</span>
           
-          <span className="mx-2 sm:mx-3 text-lg sm:text-xl md:text-2xl text-muted-foreground">|</span>
+          <span className="mx-2 sm:mx-3 text-xl sm:text-2xl md:text-3xl text-muted-foreground">&bull;</span>
           
           <XCircle 
-            className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-destructive"
+            className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-destructive"
             data-ai-hint="error cross"
           />
-          <span className="ml-1 sm:ml-1.5 text-base sm:text-lg md:text-xl font-bold text-destructive">{mistakeCount}</span>
+          <span className="ml-1 sm:ml-1.5 text-xl sm:text-2xl md:text-3xl font-bold text-destructive">{mistakeCount}</span>
         </div>
       </header>
 
@@ -587,3 +587,4 @@ export default function PetitAdamPage() {
     </div>
   );
 }
+
