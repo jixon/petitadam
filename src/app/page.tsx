@@ -68,6 +68,8 @@ const fallbackSentences: SentenceData[] = [
 ];
 
 export default function PetitAdamPage() {
+  const [hasMounted, setHasMounted] = useState(false);
+
   const [sentence, setSentence] = useState('');
   const [words, setWords] = useState<string[]>([]);
   const [correctVerbIndices, setCorrectVerbIndices] = useState<number[]>([]);
@@ -93,6 +95,10 @@ export default function PetitAdamPage() {
   const [lastUsedSentenceIndex, setLastUsedSentenceIndex] = useState<number | null>(null);
   const [initialSentenceLoaded, setInitialSentenceLoaded] = useState(false);
 
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
   const playSound = useCallback((type: 'verb_correct' | 'points_awarded' | 'error') => {
     if (type === 'verb_correct') {
       if (goodAnswerSound) {
@@ -105,7 +111,7 @@ export default function PetitAdamPage() {
           setGoodAnswerSound(audio); 
           audio.play().catch(e => console.error('Error playing new goodAnswerSound:', e));
         } catch (e) {
-          console.error('Error creating goodAnswerSound on demand:', e);
+          console.error('Error CREATING goodAnswerSound on demand:', e);
         }
       }
     } else if (type === 'points_awarded') {
@@ -137,7 +143,7 @@ export default function PetitAdamPage() {
         }
       }
     }
-  }, [goodAnswerSound, cashRegisterSound, errorSound]);
+  }, [goodAnswerSound, cashRegisterSound, errorSound, setGoodAnswerSound, setCashRegisterSound, setErrorSound]);
 
   useEffect(() => {
     setStatus('initial_loading');
@@ -412,6 +418,15 @@ export default function PetitAdamPage() {
     return "Petit Adam"; 
   };
 
+  if (!hasMounted) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8 text-center select-none">
+        <Loader2 className="w-12 h-12 text-primary animate-spin" />
+        <p className="mt-4 text-muted-foreground">Chargement du jeu...</p>
+      </div>
+    );
+  }
+
   const isSentenceInteractive = status === 'asking_verb' || status === 'asking_subject';
   const isFeedbackIncorrect = status === 'feedback_incorrect_verb' || status === 'feedback_incorrect_subject';
 
@@ -562,5 +577,7 @@ export default function PetitAdamPage() {
     </div>
   );
 }
+
+    
 
     
