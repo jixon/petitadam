@@ -484,36 +484,19 @@ export default function VerbSubjectFinderPage() {
       {showFireworks && <FireworksAnimation />}
       
       <header className="w-full flex justify-between items-center mb-6 md:mb-10">
-        <Image
-          src={`${pathPrefix}/images/petit-adam-logo.png`} 
-          alt="Petit Adam Logo"
-          width={150} 
-          height={118} 
-          className="drop-shadow-md sm:w-[180px] md:w-[200px]" 
-          data-ai-hint="child drawing"
-          priority
-        />
+        <Link href={`${pathPrefix}/`} passHref>
+          <Image
+            src={`${pathPrefix}/images/petit-adam-logo.png`} 
+            alt="Petit Adam Logo"
+            width={150} 
+            height={118} 
+            className="drop-shadow-md sm:w-[180px] md:w-[200px] cursor-pointer" 
+            data-ai-hint="child drawing"
+            priority
+          />
+        </Link>
         <div className="flex items-center">
-            <Button
-                variant="outline"
-                onClick={() => setIsStatsDialogOpen(true)}
-                className={cn(
-                "relative flex items-center bg-card text-card-foreground px-5 sm:px-6 py-7 sm:py-8 rounded-lg shadow-lg", 
-                "transition-transform duration-300 ease-in-out hover:scale-105",
-                "hover:bg-card hover:text-card-foreground", 
-                isScoreAnimating && "scale-110"
-                )}
-            >
-                <Image
-                src={`${pathPrefix}/images/coin.png`} 
-                alt="Points"
-                width={28}
-                height={28}
-                className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7"
-                data-ai-hint="coin money"
-                />
-                <span className="ml-1 sm:ml-2 mr-2 sm:mr-3 text-xl sm:text-2xl md:text-3xl font-bold text-amber-500">{score}</span>
-            </Button>
+            {/* Score box will be moved into the Card */}
             <Link href={`${pathPrefix}/`} passHref>
                 <Button variant="ghost" size="icon" aria-label="Retour à l'accueil" className="ml-2 sm:ml-4">
                     <Home className="h-5 w-5 sm:h-6 sm:h-6" />
@@ -522,7 +505,28 @@ export default function VerbSubjectFinderPage() {
         </div>
       </header>
 
-      <Card className="w-full max-w-3xl shadow-2xl rounded-xl overflow-hidden transition-all duration-300">
+      <Card className="w-full max-w-3xl shadow-2xl rounded-xl overflow-hidden transition-all duration-300 relative">
+        <Button
+            variant="outline"
+            onClick={() => setIsStatsDialogOpen(true)}
+            className={cn(
+            "absolute top-2 right-2 sm:top-4 sm:right-4 z-10 flex items-center bg-card text-card-foreground px-3 py-4 sm:px-4 sm:py-5 md:px-5 md:py-7 rounded-lg shadow-lg", 
+            "transition-transform duration-300 ease-in-out hover:scale-105",
+            "hover:bg-card hover:text-card-foreground", 
+            isScoreAnimating && "scale-110"
+            )}
+        >
+            <Image
+            src={`${pathPrefix}/images/coin.png`} 
+            alt="Points"
+            width={28}
+            height={28}
+            className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7"
+            data-ai-hint="coin money"
+            />
+            <span className="ml-1 sm:ml-2 mr-2 sm:mr-3 text-xl sm:text-2xl md:text-3xl font-bold text-amber-500">{score}</span>
+        </Button>
+
         <CardContent className="p-4 sm:p-6 md:p-10">
           <div className="mb-4 sm:mb-6 md:mb-8 min-h-[60px] sm:min-h-[80px] md:min-h-[100px] flex flex-col items-center justify-center">
             { (status === 'loading' || status === 'initial_loading') && !sentenceLoadingError ? (
