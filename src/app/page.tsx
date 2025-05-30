@@ -483,7 +483,7 @@ export default function PetitAdamPage() {
             variant="outline"
             onClick={() => setIsStatsDialogOpen(true)}
             className={cn(
-              "relative flex items-center bg-card text-card-foreground p-3 sm:p-4 rounded-lg shadow-lg", // Increased padding
+              "relative flex items-center bg-card text-card-foreground p-4 sm:p-5 rounded-lg shadow-lg", 
               "transition-transform duration-300 ease-in-out hover:scale-105",
               isScoreAnimating && "scale-110"
             )}
