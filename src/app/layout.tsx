@@ -4,6 +4,7 @@ import {Geist, Geist_Mono} from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
+const pathPrefix = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -18,7 +19,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'Petit Adam (apprendre avec adam)',
   description: 'Apprendre le français avec Adam : les verbes et les sujets en s\'amusant !',
-  manifest: '/manifest.json',
+  manifest: `${pathPrefix}/manifest.json`,
 };
 
 export default function RootLayout({
