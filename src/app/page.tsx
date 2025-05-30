@@ -76,6 +76,8 @@ const fallbackSentences: SentenceData[] = [
   { phrase: "L'abeille butine la fleur.", sujet: "L'abeille", verbe: "butine"}
 ];
 
+const pathPrefix = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 export default function PetitAdamPage() {
   const [hasMounted, setHasMounted] = useState(false);
 
@@ -122,7 +124,7 @@ export default function PetitAdamPage() {
     if (type === 'good-answer') {
       if (!goodAnswerSound) {
         try {
-          const newAudio = new Audio("./sounds/good-answer.mp3"); 
+          const newAudio = new Audio(`${pathPrefix}/sounds/good-answer.mp3`); 
           newAudio.preload = 'auto';
           setGoodAnswerSound(newAudio);
           audioToPlay = newAudio;
@@ -136,7 +138,7 @@ export default function PetitAdamPage() {
     } else if (type === 'cash-register') {
       if (!cashRegisterSound) {
         try {
-          const newAudio = new Audio("./sounds/cash-register.mp3"); 
+          const newAudio = new Audio(`${pathPrefix}/sounds/cash-register.mp3`); 
           newAudio.preload = 'auto';
           setCashRegisterSound(newAudio);
           audioToPlay = newAudio;
@@ -150,7 +152,7 @@ export default function PetitAdamPage() {
     } else if (type === 'error') {
       if (!errorSound) {
         try {
-          const newAudio = new Audio("./sounds/error-sound.mp3"); 
+          const newAudio = new Audio(`${pathPrefix}/sounds/error-sound.mp3`); 
           newAudio.preload = 'auto';
           setErrorSound(newAudio);
           audioToPlay = newAudio;
@@ -175,7 +177,7 @@ export default function PetitAdamPage() {
     setLoadingProgressValue(0);
     setSentenceLoadingError(null);
     
-    fetch("./data/sentences.json") 
+    fetch(`${pathPrefix}/data/sentences.json`) 
       .then(res => {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
@@ -196,9 +198,9 @@ export default function PetitAdamPage() {
         setAllSentences(fallbackSentences);
       });
 
-    if ('serviceWorker' in navigator) {
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register("./sw.js").then(registration => { 
+        navigator.serviceWorker.register(`${pathPrefix}/sw.js`).then(registration => { 
           // console.log(`SW registered: `, registration);
         }).catch(registrationError => {
           console.error(`SW registration failed: `, registrationError);
@@ -483,7 +485,7 @@ export default function PetitAdamPage() {
       
       <header className="w-full flex justify-between items-center mb-6 md:mb-10">
         <Image
-          src="./images/petit-adam-logo.png" 
+          src={`${pathPrefix}/images/petit-adam-logo.png`} 
           alt="Petit Adam Logo"
           width={150} 
           height={118} 
@@ -502,7 +504,7 @@ export default function PetitAdamPage() {
             )}
           >
             <Image
-              src="./images/coin.png" 
+              src={`${pathPrefix}/images/coin.png`} 
               alt="Points"
               width={28}
               height={28}
@@ -599,14 +601,14 @@ export default function PetitAdamPage() {
             {(status === 'asking_verb' || status === 'asking_subject' || status === 'feedback_incorrect_verb' || status === 'feedback_incorrect_subject') && (
               <>
                  <div className="flex items-center mt-2 text-xs sm:text-sm text-muted-foreground">
-                  <Info className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <Info className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   <span>Appuyer sur un ou plusieurs mots pour les sélectionner.</span>
                 </div>
                 <Button
                   variant="link"
                   className="mt-3 sm:mt-4 text-muted-foreground text-xs sm:text-sm"
                   onClick={() => {
-                     if (allSentences.length > 0) {
+                    if (allSentences.length > 0) {
                       setSelectedIndices([]); 
                       fetchNewSentence();
                     }
