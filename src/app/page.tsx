@@ -589,7 +589,7 @@ export default function PetitAdamPage() {
                   ref={validateButtonRef}
                   size="lg"
                   onClick={handleSubmit}
-                  disabled={selectedIndices.length === 0 || status === 'loading' || status === 'initial_loading'}
+                  disabled={selectedIndices.length === 0}
                   className="w-full sm:w-auto text-xl sm:text-2xl md:text-3xl px-8 py-4 sm:px-10 sm:py-5 md:px-12 md:py-6 rounded-xl shadow-lg transform hover:scale-105 transition-transform duration-200"
                 >
                   Valider
@@ -675,3 +675,4 @@ export default function PetitAdamPage() {
     </div>
   );
 }
+
