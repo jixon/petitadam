@@ -453,7 +453,7 @@ export default function PetitAdamPage() {
 
   if (!hasMounted) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8 text-center select-none app-background-image">
+      <div className="flex flex-col items-center justify-start min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8 text-center select-none app-background-image">
         <Loader2 className="w-12 h-12 text-primary animate-spin" />
         <p className="mt-4 text-muted-foreground">Chargement du jeu...</p>
       </div>
@@ -586,33 +586,37 @@ export default function PetitAdamPage() {
                 </Button>
               )}
             </div>
-             {(status === 'asking_verb' || status === 'asking_subject' || status === 'feedback_incorrect_verb' || status === 'feedback_incorrect_subject') && (
-              <Button
-                variant="link"
-                className="mt-3 sm:mt-4 text-muted-foreground text-xs sm:text-sm"
-                onClick={() => {
-                  if (status !== 'loading' && status !== 'initial_loading' && allSentences.length > 0) {
-                    setSelectedIndices([]); 
-                    fetchNewSentence();
-                  }
-                }}
-                disabled={status === 'loading' || status === 'initial_loading' || allSentences.length === 0}
-              >
-                <RefreshCw className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                Passer / Nouvelle phrase
-              </Button>
+            {(status === 'asking_verb' || status === 'asking_subject' || status === 'feedback_incorrect_verb' || status === 'feedback_incorrect_subject') && (
+              <>
+                <Button
+                  variant="link"
+                  className="mt-3 sm:mt-4 text-muted-foreground text-xs sm:text-sm"
+                  onClick={() => {
+                    if (status !== 'loading' && status !== 'initial_loading' && allSentences.length > 0) {
+                      setSelectedIndices([]); 
+                      fetchNewSentence();
+                    }
+                  }}
+                  disabled={status === 'loading' || status === 'initial_loading' || allSentences.length === 0}
+                >
+                  <RefreshCw className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  Passer / Nouvelle phrase
+                </Button>
+                <div className="flex items-center mt-2 text-xs sm:text-sm text-muted-foreground">
+                  <Info className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span>Appuyez sur les mots pour les sélectionner.</span>
+                </div>
+              </>
             )}
           </div>
         </CardContent>
       </Card>
 
-      <footer className="mt-6 sm:mt-8 text-xs sm:text-sm text-muted-foreground">
-        Appuyez sur les mots pour les sélectionner.
-      </footer>
+      {/* Footer removed from here */}
 
       <Dialog open={isStatsDialogOpen} onOpenChange={setIsStatsDialogOpen}>
         <DialogContent 
-           className="w-[95vw] max-h-[85vh] top-4 translate-y-0 data-[state=closed]:slide-out-to-top-[calc(env(safe-area-inset-top)_+_1rem)] data-[state=open]:slide-in-from-top-[calc(env(safe-area-inset-top)_+_1rem)] sm:max-w-md sm:top-[50%] sm:translate-y-[-50%] sm:data-[state=closed]:slide-out-to-top-[48%] sm:data-[state=open]:slide-in-from-top-[48%]"
+           className="w-[95vw] max-h-[85vh] overflow-y-auto top-4 translate-y-0 data-[state=closed]:slide-out-to-top-[calc(env(safe-area-inset-top)_+_1rem)] data-[state=open]:slide-in-from-top-[calc(env(safe-area-inset-top)_+_1rem)] sm:max-w-md sm:top-[50%] sm:translate-y-[-50%] sm:data-[state=closed]:slide-out-to-top-[48%] sm:data-[state=open]:slide-in-from-top-[48%]"
         >
           <DialogHeader>
             <DialogTitle className="text-2xl text-center">Statistiques du Jeu</DialogTitle>
@@ -622,32 +626,32 @@ export default function PetitAdamPage() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2 items-center gap-4">
-              <p className="text-right font-medium">Verbes trouvés :</p>
+              <p className="text-right font-medium">Verbes trouvés:</p>
               <p className="text-left text-lg font-semibold text-green-600">{verbsFoundCount}</p>
             </div>
             <div className="grid grid-cols-2 items-center gap-4">
-              <p className="text-right font-medium">Sujets trouvés :</p>
+              <p className="text-right font-medium">Sujets trouvés:</p>
               <p className="text-left text-lg font-semibold text-green-600">{subjectsFoundCount}</p>
             </div>
             <div className="grid grid-cols-2 items-center gap-4">
-              <p className="text-right font-medium">Erreurs (Verbe) :</p>
+              <p className="text-right font-medium">Erreurs (Verbe):</p>
               <p className="text-left text-lg font-semibold text-red-600">{verbErrorsCount}</p>
             </div>
             <div className="grid grid-cols-2 items-center gap-4">
-              <p className="text-right font-medium">Erreurs (Sujet) :</p>
+              <p className="text-right font-medium">Erreurs (Sujet):</p>
               <p className="text-left text-lg font-semibold text-red-600">{subjectErrorsCount}</p>
             </div>
              <hr className="my-2"/>
             <div className="grid grid-cols-2 items-center gap-4">
-              <p className="text-right font-medium">Total Erreurs :</p>
+              <p className="text-right font-medium">Total Erreurs:</p>
               <p className="text-left text-lg font-semibold text-red-600">{verbErrorsCount + subjectErrorsCount}</p>
             </div>
             <div className="grid grid-cols-2 items-center gap-4">
-              <p className="text-right font-medium">Phrases Réussies :</p>
+              <p className="text-right font-medium">Phrases Réussies:</p>
               <p className="text-left text-lg font-semibold text-primary">{subjectsFoundCount}</p>
             </div>
             <div className="grid grid-cols-2 items-center gap-4">
-              <p className="text-right font-medium">Score Total :</p>
+              <p className="text-right font-medium">Score Total:</p>
               <p className="text-left text-lg font-semibold text-primary">{score}</p>
             </div>
           </div>
@@ -663,4 +667,3 @@ export default function PetitAdamPage() {
     </div>
   );
 }
-
