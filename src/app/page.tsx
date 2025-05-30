@@ -115,8 +115,8 @@ export default function PetitAdamPage() {
     setHasMounted(true);
   }, []);
   
-  const playSound = useCallback((type: 'good-answer' | 'cash-register' | 'error') => {
-    let audio: HTMLAudioElement | null = null;
+ const playSound = useCallback((type: 'good-answer' | 'cash-register' | 'error') => {
+    let audioToPlay: HTMLAudioElement | null = null;
 
     if (type === 'good-answer') {
       if (!goodAnswerSound) {
@@ -124,13 +124,13 @@ export default function PetitAdamPage() {
           const newAudio = new Audio('/sounds/good-answer.mp3');
           newAudio.preload = 'auto';
           setGoodAnswerSound(newAudio);
-          audio = newAudio;
+          audioToPlay = newAudio;
         } catch (e) {
-          console.error(`Error CREATING ${type} sound:`, e);
+          console.error(`LOG POINT 29A - Error CREATING good-answer sound:`, e);
           return;
         }
       } else {
-        audio = goodAnswerSound;
+        audioToPlay = goodAnswerSound;
       }
     } else if (type === 'cash-register') {
       if (!cashRegisterSound) {
@@ -138,13 +138,13 @@ export default function PetitAdamPage() {
           const newAudio = new Audio('/sounds/cash-register.mp3');
           newAudio.preload = 'auto';
           setCashRegisterSound(newAudio);
-          audio = newAudio;
+          audioToPlay = newAudio;
         } catch (e) {
-          console.error(`Error CREATING ${type} sound:`, e);
+          console.error(`LOG POINT 29B - Error CREATING cash-register sound:`, e);
           return;
         }
       } else {
-        audio = cashRegisterSound;
+        audioToPlay = cashRegisterSound;
       }
     } else if (type === 'error') {
       if (!errorSound) {
@@ -152,19 +152,19 @@ export default function PetitAdamPage() {
           const newAudio = new Audio('/sounds/error-sound.mp3');
           newAudio.preload = 'auto';
           setErrorSound(newAudio);
-          audio = newAudio;
+          audioToPlay = newAudio;
         } catch (e) {
-          console.error(`Error CREATING ${type} sound:`, e);
+          console.error(`LOG POINT 29C - Error CREATING error sound:`, e);
           return;
         }
       } else {
-        audio = errorSound;
+        audioToPlay = errorSound;
       }
     }
 
-    if (audio) {
-      audio.currentTime = 0;
-      audio.play().catch(e => console.error(`Error playing ${type} sound:`, e));
+    if (audioToPlay) {
+      audioToPlay.currentTime = 0;
+      audioToPlay.play().catch(e => console.error(`LOG POINT 29D - Error playing ${type} sound:`, e));
     }
   }, [goodAnswerSound, cashRegisterSound, errorSound, setGoodAnswerSound, setCashRegisterSound, setErrorSound]);
 
@@ -505,7 +505,6 @@ export default function PetitAdamPage() {
               data-ai-hint="coin money"
             />
             <span className="ml-1 sm:ml-2 mr-2 sm:mr-3 text-xl sm:text-2xl md:text-3xl font-bold text-primary">{score}</span>
-            <Info className="absolute top-1.5 right-1.5 w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground/70" />
         </Button>
       </header>
 
@@ -588,6 +587,10 @@ export default function PetitAdamPage() {
             </div>
             {(status === 'asking_verb' || status === 'asking_subject' || status === 'feedback_incorrect_verb' || status === 'feedback_incorrect_subject') && (
               <>
+                <div className="flex items-center mt-2 text-xs sm:text-sm text-muted-foreground">
+                  <Info className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span>Appuyer sur un ou plusieurs mots pour les sélectionner.</span>
+                </div>
                 <Button
                   variant="link"
                   className="mt-3 sm:mt-4 text-muted-foreground text-xs sm:text-sm"
@@ -602,17 +605,11 @@ export default function PetitAdamPage() {
                   <RefreshCw className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   Passer / Nouvelle phrase
                 </Button>
-                <div className="flex items-center mt-2 text-xs sm:text-sm text-muted-foreground">
-                  <Info className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  <span>Appuyez sur les mots pour les sélectionner.</span>
-                </div>
               </>
             )}
           </div>
         </CardContent>
       </Card>
-
-      {/* Footer removed from here */}
 
       <Dialog open={isStatsDialogOpen} onOpenChange={setIsStatsDialogOpen}>
         <DialogContent 
@@ -667,3 +664,4 @@ export default function PetitAdamPage() {
     </div>
   );
 }
+
