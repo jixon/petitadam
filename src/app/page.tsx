@@ -93,7 +93,6 @@ export default function PetitAdamPage() {
   const [lastUsedSentenceIndex, setLastUsedSentenceIndex] = useState<number | null>(null);
   const [initialSentenceLoaded, setInitialSentenceLoaded] = useState(false);
 
-
   const playSound = useCallback((type: 'verb_correct' | 'points_awarded' | 'error') => {
     if (type === 'verb_correct') {
       if (goodAnswerSound) {
@@ -563,6 +562,5 @@ export default function PetitAdamPage() {
     </div>
   );
 }
-    
 
     
