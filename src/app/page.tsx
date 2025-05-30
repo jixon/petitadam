@@ -85,7 +85,7 @@ export default function PetitAdamPage() {
   const validateButtonRef = useRef<HTMLButtonElement>(null);
   const [currentQuestionAnimKey, setCurrentQuestionAnimKey] = useState(0);
   
-  const [dingSound, setDingSound] = useState<HTMLAudioElement | null>(null);
+  const [cashRegisterSound, setCashRegisterSound] = useState<HTMLAudioElement | null>(null);
   const [goodAnswerSound, setGoodAnswerSound] = useState<HTMLAudioElement | null>(null);
   const [errorSound, setErrorSound] = useState<HTMLAudioElement | null>(null);
 
@@ -110,17 +110,17 @@ export default function PetitAdamPage() {
         }
       }
     } else if (type === 'points_awarded') {
-      if (dingSound) {
-        dingSound.currentTime = 0;
-        dingSound.play().catch(e => console.error('Error playing existing dingSound:', e));
+      if (cashRegisterSound) {
+        cashRegisterSound.currentTime = 0;
+        cashRegisterSound.play().catch(e => console.error('Error playing existing cashRegisterSound:', e));
       } else {
         try {
-          const audio = new Audio('/sounds/ding.mp3');
+          const audio = new Audio('/sounds/cash-register.mp3');
           audio.preload = 'auto';
-          setDingSound(audio); 
-          audio.play().catch(e => console.error('Error playing new dingSound:', e));
+          setCashRegisterSound(audio); 
+          audio.play().catch(e => console.error('Error playing new cashRegisterSound:', e));
         } catch (e) {
-          console.error('Error creating dingSound on demand:', e);
+          console.error('Error creating cashRegisterSound on demand:', e);
         }
       }
     } else if (type === 'error') {
@@ -138,7 +138,7 @@ export default function PetitAdamPage() {
         }
       }
     }
-  }, [goodAnswerSound, dingSound, errorSound]); // Removed: cashRegisterSound
+  }, [goodAnswerSound, cashRegisterSound, errorSound]);
 
   useEffect(() => {
     setStatus('initial_loading');
@@ -175,23 +175,16 @@ export default function PetitAdamPage() {
   }, []); 
 
   const processPhrase = (phrase: string): string[] => {
-    // Regex to match words (including those with Unicode letters/accents and apostrophes) 
-    // and attached punctuation.
     const wordsArray = phrase.match(/\b[\p{L}\p{N}'-]+[.,!?;:]*|\S/gu) || [];
     
     const processedWords: string[] = [];
     let i = 0;
     while (i < wordsArray.length) {
         const currentWord = wordsArray[i];
-        // Handle elided articles (l', d', s', qu') attached to the next word
         if (/^(l'|d'|s'|qu')$/i.test(currentWord) && i + 1 < wordsArray.length && /^\p{L}+/u.test(wordsArray[i+1])) {
             processedWords.push(currentWord + wordsArray[i+1]);
             i += 2;
         } 
-        // Handle "n'" (like in "n'est", "n'aime") - keep it with its following verb part if it forms a common negation.
-        // This specific logic for "n'" might need adjustment if "n'" should always be separate or always combined.
-        // For now, we let the main regex handle "n'aime" as one token if it's written as such without a space.
-        // If "n' est" (with space) then "n'" would be separate and this logic might apply.
         else if (currentWord.toLowerCase() === "n'" && i + 1 < wordsArray.length && /^(est|ai|as|a|avons|avez|ont|étais|était|étions|étiez|étaient|suis|es|sommes|êtes|sont)/i.test(wordsArray[i+1])) {
              processedWords.push(currentWord);
              processedWords.push(wordsArray[i+1]);
