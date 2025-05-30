@@ -461,16 +461,6 @@ export default function PetitAdamPage() {
         
         <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4">
             <div className={cn(
-                "flex items-center bg-destructive/10 text-destructive p-2 sm:p-3 rounded-lg shadow-lg",
-            )}>
-                <XCircle 
-                  className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8"
-                  data-ai-hint="mistake error"
-                />
-                <span className="ml-1 sm:ml-2 text-xl sm:text-2xl md:text-3xl font-bold">{mistakeCount}</span>
-            </div>
-
-            <div className={cn(
               "flex items-center bg-primary text-primary-foreground p-2 sm:p-3 rounded-lg shadow-lg",
               "transition-transform duration-300 ease-in-out",
               isScoreAnimating && "scale-110"
@@ -483,7 +473,16 @@ export default function PetitAdamPage() {
                 className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8"
                 data-ai-hint="coin money"
               />
-              <span className="ml-1 sm:ml-2 mr-4 sm:mr-5 text-xl sm:text-2xl md:text-3xl font-bold">{score}</span>
+              <span className="ml-1 sm:ml-2 text-xl sm:text-2xl md:text-3xl font-bold">{score}</span>
+            </div>
+            <div className={cn(
+                "flex items-center bg-destructive/10 text-destructive p-2 sm:p-3 rounded-lg shadow-lg",
+            )}>
+                <XCircle 
+                  className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8"
+                  data-ai-hint="mistake error"
+                />
+                <span className="ml-1 sm:ml-2 text-xl sm:text-2xl md:text-3xl font-bold">{mistakeCount}</span>
             </div>
         </div>
       </header>
