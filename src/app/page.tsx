@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { WordChip } from '@/components/game/WordChip';
 import { FireworksAnimation } from '@/components/animations/FireworksAnimation';
 import { Progress } from "@/components/ui/progress";
-import { Brain, MessageCircleQuestion, Loader2, RefreshCw, SparklesIcon as SparklesLucide, XCircle } from 'lucide-react';
+import { Brain, MessageCircleQuestion, Loader2, RefreshCw, SparklesIcon as SparklesLucide } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type GameStatus =
@@ -446,41 +446,16 @@ export default function PetitAdamPage() {
     <div className="flex flex-col items-center justify-start min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8 text-center select-none">
       {showFireworks && <FireworksAnimation />}
       
-      <header className="w-full flex justify-between items-center mb-6 md:mb-10">
-        <div className="flex justify-start">
-          <Image 
-            src="/images/petit-adam-logo.png" 
-            alt="Petit Adam Logo" 
-            width={120} 
-            height={95} 
-            className="drop-shadow-md sm:w-[150px] sm:h-[118px] md:w-[200px] md:h-[158px]"
-            priority
-            data-ai-hint="child education"
-          />
-        </div>
-        
+      <header className="w-full flex justify-end items-center mb-6 md:mb-10">
         <div className={cn(
-          "flex items-center bg-card text-card-foreground p-2 sm:p-3 rounded-lg shadow-lg",
+          "flex flex-col items-end bg-card text-card-foreground p-2 sm:p-3 rounded-lg shadow-lg",
           "transition-transform duration-300 ease-in-out",
           isScoreAnimating && "scale-110"
         )}>
-          <Image 
-            src="/images/coin.png"
-            alt="Points"
-            width={24} 
-            height={24}
-            className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8"
-            data-ai-hint="coin gold"
-          />
-          <span className="ml-1 sm:ml-2 text-xl sm:text-2xl md:text-3xl font-bold text-primary">{score}</span>
-          
-          <span className="mx-2 sm:mx-3 text-xl sm:text-2xl md:text-3xl text-muted-foreground">&bull;</span>
-          
-          <XCircle 
-            className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-destructive"
-            data-ai-hint="error cross"
-          />
-          <span className="ml-1 sm:ml-1.5 text-xl sm:text-2xl md:text-3xl font-bold text-destructive">{mistakeCount}</span>
+          <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary">{score}</span>
+          <p className="text-xs sm:text-sm text-destructive mt-0.5 sm:mt-1">
+            {mistakeCount} {mistakeCount === 1 ? 'erreur' : 'erreurs'}
+          </p>
         </div>
       </header>
 
