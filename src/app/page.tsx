@@ -85,44 +85,59 @@ export default function PetitAdamPage() {
   const validateButtonRef = useRef<HTMLButtonElement>(null);
   const [currentQuestionAnimKey, setCurrentQuestionAnimKey] = useState(0);
   
-  const [cashRegisterSound, setCashRegisterSound] = useState<HTMLAudioElement | null>(null);
+  const [dingSound, setDingSound] = useState<HTMLAudioElement | null>(null);
+  const [goodAnswerSound, setGoodAnswerSound] = useState<HTMLAudioElement | null>(null);
   const [errorSound, setErrorSound] = useState<HTMLAudioElement | null>(null);
 
   const [allSentences, setAllSentences] = useState<SentenceData[]>([]);
   const [lastUsedSentenceIndex, setLastUsedSentenceIndex] = useState<number | null>(null);
   const [initialSentenceLoaded, setInitialSentenceLoaded] = useState(false);
 
-  const playSound = useCallback((type: 'success' | 'error') => {
-    if (type === 'success') {
-      if (cashRegisterSound) {
-        cashRegisterSound.currentTime = 0;
-        cashRegisterSound.play().catch(e => console.error('LOG POINT 28D - Error playing existing cashRegisterSound:', e));
+  const playSound = useCallback((type: 'verb_correct' | 'points_awarded' | 'error') => {
+    if (type === 'verb_correct') {
+      if (goodAnswerSound) {
+        goodAnswerSound.currentTime = 0;
+        goodAnswerSound.play().catch(e => console.error('Error playing existing goodAnswerSound:', e));
       } else {
         try {
-          const audio = new Audio('/sounds/cash-register.mp3');
+          const audio = new Audio('/sounds/good-answer.mp3');
           audio.preload = 'auto';
-          setCashRegisterSound(audio); 
-          audio.play().catch(e => console.error('LOG POINT 28E - Error playing new cashRegisterSound:', e));
+          setGoodAnswerSound(audio); 
+          audio.play().catch(e => console.error('Error playing new goodAnswerSound:', e));
         } catch (e) {
-          console.error('LOG POINT 28F - Error creating cashRegisterSound on demand:', e);
+          console.error('Error creating goodAnswerSound on demand:', e);
+        }
+      }
+    } else if (type === 'points_awarded') {
+      if (dingSound) {
+        dingSound.currentTime = 0;
+        dingSound.play().catch(e => console.error('Error playing existing dingSound:', e));
+      } else {
+        try {
+          const audio = new Audio('/sounds/ding.mp3');
+          audio.preload = 'auto';
+          setDingSound(audio); 
+          audio.play().catch(e => console.error('Error playing new dingSound:', e));
+        } catch (e) {
+          console.error('Error creating dingSound on demand:', e);
         }
       }
     } else if (type === 'error') {
       if (errorSound) {
         errorSound.currentTime = 0;
-        errorSound.play().catch(e => console.error('LOG POINT 31C/38C - Error playing existing errorSound:', e));
+        errorSound.play().catch(e => console.error('Error playing existing errorSound:', e));
       } else {
         try {
           const audio = new Audio('/sounds/error-sound.mp3');
           audio.preload = 'auto';
           setErrorSound(audio); 
-          audio.play().catch(e => console.error('LOG POINT 31D/38D - Error playing new errorSound:', e));
+          audio.play().catch(e => console.error('Error playing new errorSound:', e));
         } catch (e) {
-          console.error('LOG POINT 31E/38E - Error creating errorSound on demand:', e);
+          console.error('Error creating errorSound on demand:', e);
         }
       }
     }
-  }, [cashRegisterSound, errorSound]);
+  }, [goodAnswerSound, dingSound, errorSound]);
 
 
   useEffect(() => {
@@ -160,18 +175,30 @@ export default function PetitAdamPage() {
   }, []); 
 
   const processPhrase = (phrase: string): string[] => {
-    const rawWords = phrase.split(' ');
+    // Match words, including those with apostrophes like "l'arbre" or "n'est"
+    // Also handles punctuation attached to words.
+    const wordsArray = phrase.match(/\b[\w'-]+[.,!?;:]*|\S/g) || [];
+    
     const processedWords: string[] = [];
     let i = 0;
-    while (i < rawWords.length) {
-      const currentWord = rawWords[i];
-      if (/^(l'|d'|s'|qu')$/i.test(currentWord) && i + 1 < rawWords.length && /^[a-zA-ZÀ-ÿœŒæÆçÇ]+/.test(rawWords[i+1])) {
-        processedWords.push(currentWord + rawWords[i+1]);
-        i += 2; 
-      } else {
-        processedWords.push(currentWord);
-        i += 1;
-      }
+    while (i < wordsArray.length) {
+        const currentWord = wordsArray[i];
+        // Handle elided articles (l', d', s', qu') attached to the next word
+        if (/^(l'|d'|s'|qu')$/i.test(currentWord) && i + 1 < wordsArray.length && /^[a-zA-ZÀ-ÿœŒæÆçÇ]+/.test(wordsArray[i+1])) {
+            processedWords.push(currentWord + wordsArray[i+1]);
+            i += 2;
+        } 
+        // Handle "n'" separately, but keep it with its following verb part if simple negation
+        else if (currentWord.toLowerCase() === "n'" && i + 1 < wordsArray.length && /^(est|ai|as|a|avons|avez|ont|étais|était|étions|étiez|étaient|suis|es|sommes|êtes|sont)/i.test(wordsArray[i+1])) {
+             // Keep n' and the verb part separate for selection unless it's part of a single word like "n'est-ce pas" (not handled here)
+             processedWords.push(currentWord);
+             processedWords.push(wordsArray[i+1]);
+             i+=2;
+        }
+        else {
+            processedWords.push(currentWord);
+            i += 1;
+        }
     }
     return processedWords;
   };
@@ -333,7 +360,7 @@ export default function PetitAdamPage() {
         setLastCorrectStage('verb');
         setStatus('feedback_correct');
         setShowFireworks(true);
-        playSound('success');
+        playSound('verb_correct');
         setSelectedIndices([]); 
         setTimeout(() => {
           setShowFireworks(false);
@@ -355,7 +382,7 @@ export default function PetitAdamPage() {
         setLastCorrectStage('subject');
         setStatus('feedback_correct');
         setShowFireworks(true);
-        playSound('success');
+        playSound('points_awarded');
         setScore(s => s + 10);
         setIsScoreAnimating(true);
         setTimeout(() => setIsScoreAnimating(false), 300); 
@@ -541,4 +568,6 @@ export default function PetitAdamPage() {
     </div>
   );
 }
+    
+
     
