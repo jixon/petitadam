@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { WordChip } from '@/components/game/WordChip';
 import { FireworksAnimation } from '@/components/animations/FireworksAnimation';
 import { Progress } from "@/components/ui/progress";
-import { Brain, MessageCircleQuestion, Loader2, RefreshCw, SparklesIcon as SparklesLucide } from 'lucide-react';
+import { Brain, MessageCircleQuestion, Loader2, RefreshCw, SparklesIcon as SparklesLucide, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type GameStatus =
@@ -77,6 +77,7 @@ export default function PetitAdamPage() {
 
   const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
   const [score, setScore] = useState(0);
+  const [mistakeCount, setMistakeCount] = useState(0);
   const [status, setStatus] = useState<GameStatus>('initial_loading');
   const [showFireworks, setShowFireworks] = useState(false);
 
@@ -368,6 +369,7 @@ export default function PetitAdamPage() {
           setCurrentQuestionAnimKey(prevKey => prevKey + 1); 
         }, 1500); 
       } else {
+        setMistakeCount(prev => prev + 1);
         setStatus('feedback_incorrect_verb');
         playSound('error');
         setSelectedIndices([]); 
@@ -395,6 +397,7 @@ export default function PetitAdamPage() {
           }
         }, 1500); 
       } else {
+        setMistakeCount(prev => prev + 1);
         setStatus('feedback_incorrect_subject');
         playSound('error');
         setSelectedIndices([]); 
@@ -455,6 +458,17 @@ export default function PetitAdamPage() {
             data-ai-hint="child education"
           />
         </div>
+        <div className="w-1/3 flex justify-center">
+            <div className={cn(
+                "flex items-center bg-destructive/10 text-destructive p-2 sm:p-3 rounded-lg shadow-lg",
+            )}>
+                <XCircle 
+                  className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8"
+                  data-ai-hint="mistake error"
+                />
+                <span className="ml-1 sm:ml-2 mr-2 sm:mr-3 text-xl sm:text-2xl md:text-3xl font-bold">{mistakeCount}</span>
+            </div>
+        </div>
         <div className="w-1/3 flex justify-end">
           <div className={cn(
             "flex items-center bg-primary text-primary-foreground p-2 sm:p-3 rounded-lg shadow-lg",
@@ -469,7 +483,7 @@ export default function PetitAdamPage() {
               className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8"
               data-ai-hint="coin money"
             />
-            <span className="ml-1 sm:ml-2 mr-2 sm:mr-3 text-xl sm:text-2xl md:text-3xl font-bold">{score}</span>
+            <span className="ml-1 sm:ml-2 mr-4 sm:mr-5 text-xl sm:text-2xl md:text-3xl font-bold">{score}</span>
           </div>
         </div>
       </header>
