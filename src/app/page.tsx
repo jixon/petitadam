@@ -93,6 +93,7 @@ export default function PetitAdamPage() {
   const [lastUsedSentenceIndex, setLastUsedSentenceIndex] = useState<number | null>(null);
   const [initialSentenceLoaded, setInitialSentenceLoaded] = useState(false);
 
+
   const playSound = useCallback((type: 'verb_correct' | 'points_awarded' | 'error') => {
     if (type === 'verb_correct') {
       if (goodAnswerSound) {
@@ -137,8 +138,7 @@ export default function PetitAdamPage() {
         }
       }
     }
-  }, [goodAnswerSound, dingSound, errorSound]);
-
+  }, [goodAnswerSound, dingSound, errorSound]); // Removed: cashRegisterSound
 
   useEffect(() => {
     setStatus('initial_loading');
@@ -175,22 +175,24 @@ export default function PetitAdamPage() {
   }, []); 
 
   const processPhrase = (phrase: string): string[] => {
-    // Match words, including those with apostrophes like "l'arbre" or "n'est"
-    // Also handles punctuation attached to words.
-    const wordsArray = phrase.match(/\b[\w'-]+[.,!?;:]*|\S/g) || [];
+    // Regex to match words (including those with Unicode letters/accents and apostrophes) 
+    // and attached punctuation.
+    const wordsArray = phrase.match(/\b[\p{L}\p{N}'-]+[.,!?;:]*|\S/gu) || [];
     
     const processedWords: string[] = [];
     let i = 0;
     while (i < wordsArray.length) {
         const currentWord = wordsArray[i];
         // Handle elided articles (l', d', s', qu') attached to the next word
-        if (/^(l'|d'|s'|qu')$/i.test(currentWord) && i + 1 < wordsArray.length && /^[a-zA-ZÀ-ÿœŒæÆçÇ]+/.test(wordsArray[i+1])) {
+        if (/^(l'|d'|s'|qu')$/i.test(currentWord) && i + 1 < wordsArray.length && /^\p{L}+/u.test(wordsArray[i+1])) {
             processedWords.push(currentWord + wordsArray[i+1]);
             i += 2;
         } 
-        // Handle "n'" separately, but keep it with its following verb part if simple negation
+        // Handle "n'" (like in "n'est", "n'aime") - keep it with its following verb part if it forms a common negation.
+        // This specific logic for "n'" might need adjustment if "n'" should always be separate or always combined.
+        // For now, we let the main regex handle "n'aime" as one token if it's written as such without a space.
+        // If "n' est" (with space) then "n'" would be separate and this logic might apply.
         else if (currentWord.toLowerCase() === "n'" && i + 1 < wordsArray.length && /^(est|ai|as|a|avons|avez|ont|étais|était|étions|étiez|étaient|suis|es|sommes|êtes|sont)/i.test(wordsArray[i+1])) {
-             // Keep n' and the verb part separate for selection unless it's part of a single word like "n'est-ce pas" (not handled here)
              processedWords.push(currentWord);
              processedWords.push(wordsArray[i+1]);
              i+=2;
