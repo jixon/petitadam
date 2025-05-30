@@ -611,7 +611,7 @@ export default function PetitAdamPage() {
                       fetchNewSentence();
                     }
                   }}
-                  disabled={status === 'loading' || status === 'initial_loading' || allSentences.length === 0}
+                  disabled={allSentences.length === 0}
                 >
                   <RefreshCw className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   Passer / Nouvelle phrase
