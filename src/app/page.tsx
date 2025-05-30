@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { WordChip } from '@/components/game/WordChip';
 import { FireworksAnimation } from '@/components/animations/FireworksAnimation';
 import { Progress } from "@/components/ui/progress";
-import { Brain, MessageCircleQuestion, Loader2, RefreshCw, SparklesIcon as SparklesLucide } from 'lucide-react';
+import { Brain, MessageCircleQuestion, Loader2, RefreshCw, SparklesIcon as SparklesLucide, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Dialog,
@@ -483,7 +483,7 @@ export default function PetitAdamPage() {
             variant="outline"
             onClick={() => setIsStatsDialogOpen(true)}
             className={cn(
-              "flex items-center bg-card text-card-foreground p-2 sm:p-3 rounded-lg shadow-lg",
+              "relative flex items-center bg-card text-card-foreground p-3 sm:p-4 rounded-lg shadow-lg", // Increased padding
               "transition-transform duration-300 ease-in-out hover:scale-105",
               isScoreAnimating && "scale-110"
             )}
@@ -497,6 +497,7 @@ export default function PetitAdamPage() {
               data-ai-hint="coin money"
             />
             <span className="ml-1 sm:ml-2 text-xl sm:text-2xl md:text-3xl font-bold text-primary">{score}</span>
+            <Info className="absolute top-1.5 right-1.5 w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground/70" />
         </Button>
       </header>
 
