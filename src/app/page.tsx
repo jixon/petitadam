@@ -78,10 +78,6 @@ export default function PetitAdamPage() {
   const [status, setStatus] = useState<GameStatus>('initial_loading');
   const [showFireworks, setShowFireworks] = useState(false);
 
-  // LOG POINT 0 was here, moved below status declaration
-  console.log('PetitAdamPage component rendering or re-rendering. Status:', status);
-
-
   const [loadingProgressValue, setLoadingProgressValue] = useState(0);
   const [isScoreAnimating, setIsScoreAnimating] = useState(false);
   const [lastCorrectStage, setLastCorrectStage] = useState<'verb' | 'subject' | null>(null);
@@ -95,6 +91,10 @@ export default function PetitAdamPage() {
   const [allSentences, setAllSentences] = useState<SentenceData[]>([]);
   const [lastUsedSentenceIndex, setLastUsedSentenceIndex] = useState<number | null>(null);
   const [initialSentenceLoaded, setInitialSentenceLoaded] = useState(false);
+
+  // Moved console.log to after status declaration
+  // console.log('LOG POINT 0: PetitAdamPage component rendering or re-rendering. Status:', status);
+
 
   const playSound = useCallback((type: 'success' | 'error') => {
     if (type === 'success') {
@@ -155,7 +155,7 @@ export default function PetitAdamPage() {
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js').then(registration => {
-          console.log(`SW registered: `, registration);
+          // console.log(`SW registered: `, registration);
         }).catch(registrationError => {
           console.error(`SW registration failed: `, registrationError);
         });
