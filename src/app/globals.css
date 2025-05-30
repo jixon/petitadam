@@ -114,7 +114,7 @@ body {
 
 @layer utilities {
   .app-background-image {
-    background-image: url('/images/bg.jpg'); /* Corrected path */
+    background-image: url('/images/bg.jpg');
     background-position: bottom center;
     background-repeat: no-repeat;
     background-size: cover;
@@ -196,5 +196,18 @@ body {
 
   .font-question {
     font-family: var(--font-sour-gummy);
+  }
+
+  .text-karaoke-glow {
+    /* 1. Set a background color for the text element. This will become the visible color of the text. */
+    background-color: hsl(var(--foreground)); /* Using the theme's dark foreground color for the text fill */
+    /* 2. Make the actual text color transparent. */
+    color: transparent;
+    /* 3. Clip the background to the shape of the text. */
+    -webkit-background-clip: text;
+    background-clip: text;
+    /* 4. Add a text-shadow for the "glow" effect around the clipped background. */
+    text-shadow: 0px 0px 8px hsla(var(--primary-foreground), 0.75), /* Main white glow */
+                 0px 0px 16px hsla(var(--primary), 0.5);         /* Softer, wider primary color glow */
   }
 }

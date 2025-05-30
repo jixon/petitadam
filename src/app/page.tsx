@@ -25,7 +25,7 @@ export default function HomePage() {
       </header>
 
       <main className="w-full max-w-2xl">
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary-foreground mb-8 font-question">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-8 font-question text-karaoke-glow">
           Bienvenue à Petit Adam !
         </h1>
         <p className="text-lg sm:text-xl text-secondary-foreground mb-12">
