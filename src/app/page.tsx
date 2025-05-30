@@ -34,19 +34,19 @@ export default function HomePage() {
 
         <div className="grid grid-cols-1 gap-6">
           <Link href={`${pathPrefix}/games/verb-subject-finder`} passHref>
-            <Card className="hover:shadow-xl transition-shadow duration-300 cursor-pointer bg-card/80 backdrop-blur-sm">
-              <CardHeader className="px-6 pt-6 pb-2"> {/* Reduced bottom padding */}
-                <div className="flex items-center justify-center mb-4">
+            <Card className="group hover:shadow-xl transition-shadow duration-300 cursor-pointer bg-card/80 backdrop-blur-sm">
+              <CardHeader className="px-6 pt-6 pb-2">
+                <div className="flex items-center justify-center mb-4 transition-all duration-300 group-hover:[filter:drop-shadow(0_0_0.75rem_hsl(var(--primary)))] [filter:drop-shadow(0_0_0.4rem_hsl(var(--primary)))]">
                    <Image
-                    src={`${pathPrefix}/images/game-icon-verb-subject.png`}
+                    src={`${pathPrefix}/images/jeu-trouver-verbe-sujet.png`}
                     alt="Icône du jeu Verbe et Sujet"
                     width={80}
                     height={80}
                     className="rounded-lg"
-                    data-ai-hint="notebook pencil"
+                    data-ai-hint="game icon"
                   />
                 </div>
-                <CardTitle className="text-2xl font-semibold text-card-foreground text-center font-question"> {/* Changed color */}
+                <CardTitle className="text-2xl font-semibold text-card-foreground text-center font-question">
                   Trouve le Verbe et le Sujet
                 </CardTitle>
               </CardHeader>
