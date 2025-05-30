@@ -92,7 +92,6 @@ export default function PetitAdamPage() {
   const [lastUsedSentenceIndex, setLastUsedSentenceIndex] = useState<number | null>(null);
   const [initialSentenceLoaded, setInitialSentenceLoaded] = useState(false);
 
-
   const playSound = useCallback((type: 'success' | 'error') => {
     if (type === 'success') {
       if (cashRegisterSound) {
@@ -406,7 +405,6 @@ export default function PetitAdamPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8 text-center select-none">
-      <h1>H1 TEST - VISIBLE? (v4)</h1>
       {showFireworks && <FireworksAnimation />}
       
       <header className="w-full flex justify-between items-center mb-6 md:mb-10">
