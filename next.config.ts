@@ -3,9 +3,9 @@ import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
   /* config options here */
-  basePath: '/petitadam',
-  assetPrefix: '/petitadam',
-  output: 'export',
+  // basePath: '/petitadam', // Reverted
+  // assetPrefix: '/petitadam', // Reverted
+  // output: 'export', // Reverted
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -22,6 +22,8 @@ const nextConfig: NextConfig = {
       },
     ],
     // Required for static export with next/image
+    // This can remain true as it doesn't harm SSR/hybrid deployments
+    // and is beneficial if you ever do static exports for other purposes.
     unoptimized: true,
   },
 };
