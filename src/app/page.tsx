@@ -40,10 +40,10 @@ export default function HomePage() {
                    <Image
                     src={`${pathPrefix}/images/jeu-trouver-verbe-sujet.png`}
                     alt="Icône du jeu Verbe et Sujet"
-                    width={80}
-                    height={80}
+                    width={240}
+                    height={240}
                     className="rounded-lg"
-                    data-ai-hint="game icon"
+                    data-ai-hint="game education"
                   />
                 </div>
                 <CardTitle className="text-2xl font-semibold text-card-foreground text-center font-question">
