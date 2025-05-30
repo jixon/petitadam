@@ -469,7 +469,7 @@ export default function PetitAdamPage() {
               className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8"
               data-ai-hint="coin money"
             />
-            <span className="ml-1 sm:ml-2 mr-4 sm:mr-5 text-xl sm:text-2xl md:text-3xl font-bold">{score}</span>
+            <span className="ml-1 sm:ml-2 mr-2 sm:mr-3 text-xl sm:text-2xl md:text-3xl font-bold">{score}</span>
           </div>
         </div>
       </header>
@@ -577,6 +577,8 @@ export default function PetitAdamPage() {
     </div>
   );
 }
+
+    
 
     
 
