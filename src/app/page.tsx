@@ -192,7 +192,6 @@ export default function PetitAdamPage() {
     let i = 0;
     while (i < rawWords.length) {
       const currentWord = rawWords[i];
-      // Combine l', d', s', qu' with the next word if it starts with a letter
       if (/^(l'|d'|s'|qu')$/i.test(currentWord) && i + 1 < rawWords.length && /^[a-zA-ZÀ-ÿœŒæÆçÇ]+/.test(rawWords[i+1])) {
         processedWords.push(currentWord + rawWords[i+1]);
         i += 2; 
@@ -215,7 +214,7 @@ export default function PetitAdamPage() {
 
     setStatus('loading');
     setSelectedIndices([]);
-    setWords([]); // Clear previous words
+    setWords([]); 
     setCorrectVerbIndices([]);
     setCorrectSubjectIndices([]);
     setLoadingProgressValue(0);
@@ -468,8 +467,8 @@ export default function PetitAdamPage() {
 
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-yellow-300 text-foreground p-4 sm:p-6 md:p-8 text-center select-none">
-      <h1>TEST MISE À JOUR VISIBLE ?</h1>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8 text-center select-none">
+      <h1>TEST MISE À JOUR VISIBLE ? (v2)</h1>
       {showFireworks && <FireworksAnimation />}
       
       <header className="w-full flex justify-between items-center mb-6 md:mb-10">
