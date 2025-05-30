@@ -537,7 +537,7 @@ export default function PetitAdamPage() {
                   { isFeedbackIncorrect && <MessageCircleQuestion className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 mr-2 sm:mr-3 text-destructive" /> }
                   { status === 'feedback_correct' && !showFireworks && <SparklesLucide className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 mr-2 sm:mr-3 text-accent" /> }
                   
-                  <h2 key={currentQuestionAnimKey}> 
+                  <h2 key={currentQuestionAnimKey} className="font-question"> 
                     {shouldApplyWavyAnimation
                       ? questionText.split('').map((char, index) => (
                           <span

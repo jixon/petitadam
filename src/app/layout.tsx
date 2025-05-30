@@ -20,6 +20,8 @@ export const metadata: Metadata = {
   manifest: "./manifest.json", 
 };
 
+const pathPrefix = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -28,6 +30,9 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Sour+Gummy:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet" />
         {/* D'autres balises head peuvent être ici */}
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>

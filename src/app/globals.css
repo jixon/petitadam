@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -52,6 +53,8 @@ body {
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    --font-sour-gummy: "Sour Gummy", cursive;
   }
 
   .dark {
@@ -111,7 +114,7 @@ body {
 
 @layer utilities {
   .app-background-image {
-    background-image: url('/images/bg.jpg');
+    background-image: url('/images/bg.jpg'); /* Corrected path */
     background-position: bottom center;
     background-repeat: no-repeat;
     background-size: cover;
@@ -189,5 +192,9 @@ body {
     animation-timing-function: ease-in-out;
     animation-iteration-count: 1;
     animation-fill-mode: forwards; /* Keep final state (opacity: 1, transform: translateY(0px)) */
+  }
+
+  .font-question {
+    font-family: var(--font-sour-gummy);
   }
 }
