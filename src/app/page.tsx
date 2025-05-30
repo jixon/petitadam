@@ -100,8 +100,8 @@ export default function PetitAdamPage() {
     setHasMounted(true);
   }, []);
 
-  const playSound = useCallback((type: 'verb_correct' | 'points_awarded' | 'error') => {
-    if (type === 'verb_correct') {
+  const playSound = useCallback((type: 'good-answer' | 'cash-register' | 'error') => {
+    if (type === 'good-answer') {
       if (goodAnswerSound) {
         goodAnswerSound.currentTime = 0;
         goodAnswerSound.play().catch(e => console.error('Error playing existing goodAnswerSound:', e));
@@ -115,7 +115,7 @@ export default function PetitAdamPage() {
           console.error('Error CREATING goodAnswerSound on demand:', e);
         }
       }
-    } else if (type === 'points_awarded') {
+    } else if (type === 'cash-register') {
       if (cashRegisterSound) {
         cashRegisterSound.currentTime = 0;
         cashRegisterSound.play().catch(e => console.error('Error playing existing cashRegisterSound:', e));
@@ -361,7 +361,7 @@ export default function PetitAdamPage() {
         setLastCorrectStage('verb');
         setStatus('feedback_correct');
         setShowFireworks(true);
-        playSound('verb_correct');
+        playSound('good-answer');
         setSelectedIndices([]); 
         setTimeout(() => {
           setShowFireworks(false);
@@ -384,7 +384,7 @@ export default function PetitAdamPage() {
         setLastCorrectStage('subject');
         setStatus('feedback_correct');
         setShowFireworks(true);
-        playSound('points_awarded');
+        playSound('cash-register');
         setScore(s => s + 10);
         setIsScoreAnimating(true);
         setTimeout(() => setIsScoreAnimating(false), 300); 
@@ -447,7 +447,7 @@ export default function PetitAdamPage() {
       {showFireworks && <FireworksAnimation />}
       
       <header className="w-full flex justify-between items-center mb-6 md:mb-10">
-        <div className="w-1/3 flex justify-start">
+        <div className="flex justify-start">
           <Image 
             src="/images/petit-adam-logo.png" 
             alt="Petit Adam Logo" 
@@ -458,7 +458,8 @@ export default function PetitAdamPage() {
             data-ai-hint="child education"
           />
         </div>
-        <div className="w-1/3 flex justify-center">
+        
+        <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4">
             <div className={cn(
                 "flex items-center bg-destructive/10 text-destructive p-2 sm:p-3 rounded-lg shadow-lg",
             )}>
@@ -466,25 +467,24 @@ export default function PetitAdamPage() {
                   className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8"
                   data-ai-hint="mistake error"
                 />
-                <span className="ml-1 sm:ml-2 mr-2 sm:mr-3 text-xl sm:text-2xl md:text-3xl font-bold">{mistakeCount}</span>
+                <span className="ml-1 sm:ml-2 text-xl sm:text-2xl md:text-3xl font-bold">{mistakeCount}</span>
             </div>
-        </div>
-        <div className="w-1/3 flex justify-end">
-          <div className={cn(
-            "flex items-center bg-primary text-primary-foreground p-2 sm:p-3 rounded-lg shadow-lg",
-            "transition-transform duration-300 ease-in-out",
-            isScoreAnimating && "scale-110"
-          )}>
-            <Image 
-              src="/images/coin.png"
-              alt="Coin"
-              width={24} 
-              height={24}
-              className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8"
-              data-ai-hint="coin money"
-            />
-            <span className="ml-1 sm:ml-2 mr-4 sm:mr-5 text-xl sm:text-2xl md:text-3xl font-bold">{score}</span>
-          </div>
+
+            <div className={cn(
+              "flex items-center bg-primary text-primary-foreground p-2 sm:p-3 rounded-lg shadow-lg",
+              "transition-transform duration-300 ease-in-out",
+              isScoreAnimating && "scale-110"
+            )}>
+              <Image 
+                src="/images/coin.png"
+                alt="Coin"
+                width={24} 
+                height={24}
+                className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8"
+                data-ai-hint="coin money"
+              />
+              <span className="ml-1 sm:ml-2 mr-4 sm:mr-5 text-xl sm:text-2xl md:text-3xl font-bold">{score}</span>
+            </div>
         </div>
       </header>
 
@@ -591,3 +591,5 @@ export default function PetitAdamPage() {
     </div>
   );
 }
+
+    
