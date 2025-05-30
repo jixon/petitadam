@@ -500,9 +500,9 @@ export default function VerbSubjectFinderPage() {
                 <Button 
                     variant="ghost" 
                     aria-label="Retour à l'accueil" 
-                    className="ml-2 sm:ml-4 hover:bg-transparent hover:text-foreground h-16 w-16 p-2 hover:animate-shake"
+                    className="ml-2 sm:ml-4 hover:bg-transparent hover:text-foreground h-20 w-20 p-3 hover:animate-shake"
                 >
-                    <Home className="h-12 w-12" />
+                    <Home className="h-14 w-14" />
                 </Button>
             </Link>
         </div>
@@ -513,7 +513,7 @@ export default function VerbSubjectFinderPage() {
             variant="outline"
             onClick={() => setIsStatsDialogOpen(true)}
             className={cn(
-            "absolute -top-3 right-3 sm:-top-4 sm:right-4 z-10 flex items-center bg-card text-card-foreground px-5 sm:px-6 py-7 sm:py-7 rounded-lg shadow-lg", 
+            "absolute -top-3 right-3 sm:-top-4 sm:right-4 z-10 flex items-center bg-card text-card-foreground px-5 sm:px-6 py-7 sm:py-8 rounded-lg shadow-lg", 
             "transition-transform duration-300 ease-in-out hover:scale-105",
             "hover:bg-card hover:text-card-foreground", 
             isScoreAnimating && "scale-110"
@@ -528,9 +528,6 @@ export default function VerbSubjectFinderPage() {
             data-ai-hint="coin money"
             />
             <span className="ml-1 sm:ml-2 mr-2 sm:mr-3 text-xl sm:text-2xl md:text-3xl font-bold text-amber-500">{score}</span>
-             <span className="text-muted-foreground/70 mx-1 sm:mx-1.5">&bull;</span>
-            <XCircle className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-destructive/80" />
-            <span className="ml-1 sm:ml-1.5 text-xl sm:text-2xl md:text-3xl font-bold text-destructive">{verbErrorsCount + subjectErrorsCount}</span>
         </Button>
 
         <CardContent className="p-4 sm:p-6 md:p-10">
