@@ -8,7 +8,7 @@ body {
 
 @layer base {
   :root {
-    --background: 206 100% 97%; /* Very light desaturated blue (#F0F8FF) */
+    --background: 205 68% 87%; /* Updated from 206 100% 97% to #C7E2F3 */
     --foreground: 210 30% 25%; /* Darker blue/gray for text */
 
     --card: 206 100% 99%;
@@ -110,6 +110,13 @@ body {
 }
 
 @layer utilities {
+  .app-background-image {
+    background-image: url('/images/bg.jpg');
+    background-position: bottom center;
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+
   .animate-shake {
     animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
   }

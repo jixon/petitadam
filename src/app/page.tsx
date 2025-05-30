@@ -110,14 +110,13 @@ export default function PetitAdamPage() {
   const [allSentences, setAllSentences] = useState<SentenceData[]>([]);
   const [lastUsedSentenceIndex, setLastUsedSentenceIndex] = useState<number | null>(null);
   const [initialSentenceLoaded, setInitialSentenceLoaded] = useState(false);
-
+  
   useEffect(() => {
     setHasMounted(true);
   }, []);
   
   const playSound = useCallback((type: 'good-answer' | 'cash-register' | 'error') => {
     let audio: HTMLAudioElement | null = null;
-    let soundPath = '';
 
     if (type === 'good-answer') {
       if (!goodAnswerSound) {
@@ -165,9 +164,7 @@ export default function PetitAdamPage() {
 
     if (audio) {
       audio.currentTime = 0;
-      audio.play().catch(e => console.error(`Error playing ${type} sound from path ${soundPath}:`, e));
-    } else {
-         console.error(`Audio object for ${type} is null or not ready.`);
+      audio.play().catch(e => console.error(`Error playing ${type} sound:`, e));
     }
   }, [goodAnswerSound, cashRegisterSound, errorSound, setGoodAnswerSound, setCashRegisterSound, setErrorSound]);
 
@@ -451,7 +448,7 @@ export default function PetitAdamPage() {
 
   if (!hasMounted) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8 text-center select-none">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8 text-center select-none app-background-image">
         <Loader2 className="w-12 h-12 text-primary animate-spin" />
         <p className="mt-4 text-muted-foreground">Chargement du jeu...</p>
       </div>
@@ -471,7 +468,7 @@ export default function PetitAdamPage() {
 
 
   return (
-    <div className="flex flex-col items-center justify-start min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8 text-center select-none">
+    <div className="flex flex-col items-center justify-start min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8 text-center select-none app-background-image">
       {showFireworks && <FireworksAnimation />}
       
       <header className="w-full flex justify-between items-center mb-6 md:mb-10">
@@ -490,7 +487,7 @@ export default function PetitAdamPage() {
             className={cn(
               "relative flex items-center bg-card text-card-foreground p-5 sm:p-6 rounded-lg shadow-lg", 
               "transition-transform duration-300 ease-in-out hover:scale-105",
-              "hover:bg-card hover:text-card-foreground", // Override default outline hover
+              "hover:bg-card hover:text-card-foreground", 
               isScoreAnimating && "scale-110"
             )}
           >
@@ -656,8 +653,6 @@ export default function PetitAdamPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
     </div>
   );
 }
-
