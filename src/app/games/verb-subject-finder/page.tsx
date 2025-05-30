@@ -484,42 +484,42 @@ export default function VerbSubjectFinderPage() {
       {showFireworks && <FireworksAnimation />}
       
       <header className="w-full flex justify-between items-center mb-6 md:mb-10">
+        <Image
+          src={`${pathPrefix}/images/petit-adam-logo.png`} 
+          alt="Petit Adam Logo"
+          width={150} 
+          height={118} 
+          className="drop-shadow-md sm:w-[180px] md:w-[200px]" 
+          data-ai-hint="child drawing"
+          priority
+        />
         <div className="flex items-center">
-          <Link href={`${pathPrefix}/`} passHref>
-            <Button variant="ghost" size="icon" aria-label="Retour à l'accueil" className="mr-2 sm:mr-4">
-              <Home className="h-5 w-5 sm:h-6 sm:h-6" />
+            <Button
+                variant="outline"
+                onClick={() => setIsStatsDialogOpen(true)}
+                className={cn(
+                "relative flex items-center bg-card text-card-foreground px-5 sm:px-6 py-7 sm:py-8 rounded-lg shadow-lg", 
+                "transition-transform duration-300 ease-in-out hover:scale-105",
+                "hover:bg-card hover:text-card-foreground", 
+                isScoreAnimating && "scale-110"
+                )}
+            >
+                <Image
+                src={`${pathPrefix}/images/coin.png`} 
+                alt="Points"
+                width={28}
+                height={28}
+                className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7"
+                data-ai-hint="coin money"
+                />
+                <span className="ml-1 sm:ml-2 mr-2 sm:mr-3 text-xl sm:text-2xl md:text-3xl font-bold text-amber-500">{score}</span>
             </Button>
-          </Link>
-          <Image
-            src={`${pathPrefix}/images/petit-adam-logo.png`} 
-            alt="Petit Adam Logo"
-            width={150} 
-            height={118} 
-            className="drop-shadow-md sm:w-[180px] md:w-[200px]" 
-            data-ai-hint="child drawing"
-            priority
-          />
+            <Link href={`${pathPrefix}/`} passHref>
+                <Button variant="ghost" size="icon" aria-label="Retour à l'accueil" className="ml-2 sm:ml-4">
+                    <Home className="h-5 w-5 sm:h-6 sm:h-6" />
+                </Button>
+            </Link>
         </div>
-        <Button
-            variant="outline"
-            onClick={() => setIsStatsDialogOpen(true)}
-            className={cn(
-              "relative flex items-center bg-card text-card-foreground px-5 sm:px-6 py-7 sm:py-8 rounded-lg shadow-lg", 
-              "transition-transform duration-300 ease-in-out hover:scale-105",
-              "hover:bg-card hover:text-card-foreground", 
-              isScoreAnimating && "scale-110"
-            )}
-          >
-            <Image
-              src={`${pathPrefix}/images/coin.png`} 
-              alt="Points"
-              width={28}
-              height={28}
-              className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7"
-              data-ai-hint="coin money"
-            />
-            <span className="ml-1 sm:ml-2 mr-2 sm:mr-3 text-xl sm:text-2xl md:text-3xl font-bold text-amber-500">{score}</span>
-        </Button>
       </header>
 
       <Card className="w-full max-w-3xl shadow-2xl rounded-xl overflow-hidden transition-all duration-300">

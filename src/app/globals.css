@@ -200,8 +200,8 @@ body {
 
   .text-karaoke-glow {
     color: hsl(var(--primary-foreground)); /* White text */
-    text-shadow: 0 0 8px hsl(var(--primary)), /* Blue glow */
-                 0 0 15px hsl(var(--primary)); /* Softer, wider blue glow */
+    text-shadow: 0 0 8px hsl(var(--secondary-foreground)), /* Darker Blue glow */
+                 0 0 15px hsl(var(--secondary-foreground)); /* Softer, wider Darker blue glow */
   }
 }
 
