@@ -440,7 +440,7 @@ export default function PetitAdamPage() {
 
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8 text-center select-none">
+    <div className="flex flex-col items-center justify-start min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8 text-center select-none">
       {showFireworks && <FireworksAnimation />}
       
       <header className="w-full flex justify-between items-center mb-6 md:mb-10">
@@ -577,9 +577,3 @@ export default function PetitAdamPage() {
     </div>
   );
 }
-
-    
-
-    
-
-    
