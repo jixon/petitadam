@@ -497,8 +497,13 @@ export default function VerbSubjectFinderPage() {
         </Link>
         <div className="flex items-center">
             <Link href={`${pathPrefix}/`} passHref>
-                <Button variant="ghost" size="icon" aria-label="Retour à l'accueil" className="ml-2 sm:ml-4">
-                    <Home className="h-5 w-5 sm:h-6 sm:h-6" />
+                <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    aria-label="Retour à l'accueil" 
+                    className="ml-2 sm:ml-4 hover:bg-transparent hover:text-foreground"
+                >
+                    <Home className="h-6 w-6 sm:h-7 sm:h-7" />
                 </Button>
             </Link>
         </div>
