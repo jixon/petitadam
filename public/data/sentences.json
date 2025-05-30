@@ -25,28 +25,28 @@
     "verbe": "chantent"
   },
   {
-    "phrase": "Maman regarde la télévision.",
-    "sujet": "Maman",
-    "verbe": "regarde"
+    "phrase": "L'abeille butine la fleur.",
+    "sujet": "L'abeille",
+    "verbe": "butine"
   },
   {
-    "phrase": "Le chien aboie fort.",
+    "phrase": "Le soleil brille dans le ciel bleu.",
+    "sujet": "Le soleil",
+    "verbe": "brille"
+  },
+  {
+    "phrase": "Maman cuisine un bon repas.",
+    "sujet": "Maman",
+    "verbe": "cuisine"
+  },
+  {
+    "phrase": "Le chien aboie après le facteur.",
     "sujet": "Le chien",
     "verbe": "aboie"
   },
   {
-    "phrase": "L'enfant dessine une maison.",
-    "sujet": "L'enfant",
-    "verbe": "dessine"
-  },
-  {
-    "phrase": "Le bébé pleure un peu.",
-    "sujet": "Le bébé",
-    "verbe": "pleure"
-  },
-  {
-    "phrase": "Nous mangeons des pommes.",
-    "sujet": "Nous",
-    "verbe": "mangeons"
+    "phrase": "La fleur pousse dans le jardin.",
+    "sujet": "La fleur",
+    "verbe": "pousse"
   }
 ]

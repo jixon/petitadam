@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'Petit Adam (apprendre avec adam)',
   description: 'Apprendre le français avec Adam : les verbes et les sujets en s\'amusant !',
-  manifest: '/manifest.json', // Ajout du lien vers le manifeste
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({

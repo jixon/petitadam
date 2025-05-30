@@ -1,88 +1,81 @@
+// Basic service worker for PWA caching
 
 const CACHE_NAME = 'petit-adam-cache-v1';
 const urlsToCache = [
   '/',
   '/manifest.json',
-  '/images/petit-adam-logo.png',
-  '/sounds/cash-register.mp3',
-  '/data/sentences.json'
-  // Les fichiers CSS et JS de Next.js sont généralement versionnés avec des hashes,
-  // une mise en cache plus avancée (ex: avec Workbox) serait nécessaire pour les gérer de manière robuste.
-  // Pour l'instant, on se concentre sur les assets statiques principaux.
+  // Add paths to your main CSS, JS, and critical image assets here
+  // Example: '/styles/globals.css', '/images/petit-adam-logo.png'
+  // For Next.js, many assets are fingerprinted, so dynamic caching might be better
+  // This basic example will cache the main page and manifest.
 ];
 
 self.addEventListener('install', (event) => {
+  console.log('Service Worker: Install event in progress.');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('Service Worker: Caching app shell');
-        return cache.addAll(urlsToCache);
+        // Add files that are part of the app shell.
+        // Be careful with Next.js specific hashed files if adding them here.
+        return cache.addAll(urlsToCache.map(url => new Request(url, { cache: 'reload' })));
       })
-      .catch(error => {
-        console.error('Service Worker: Failed to cache app shell', error);
+      .then(() => {
+        console.log('Service Worker: Install completed');
+      })
+      .catch((error) => {
+        console.error('Service Worker: Install failed:', error);
+      })
+  );
+});
+
+self.addEventListener('fetch', (event) => {
+  // console.log('Service Worker: Fetch event for ', event.request.url);
+  event.respondWith(
+    caches.match(event.request)
+      .then((response) => {
+        if (response) {
+          // console.log('Service Worker: Found ', event.request.url, ' in cache');
+          return response;
+        }
+        // console.log('Service Worker: Network request for ', event.request.url);
+        return fetch(event.request).then((response) => {
+          // Optional: Caching new requests dynamically
+          // if (!response || response.status !== 200 || response.type !== 'basic') {
+          //   return response;
+          // }
+          // const responseToCache = response.clone();
+          // caches.open(CACHE_NAME)
+          //   .then((cache) => {
+          //     cache.put(event.request, responseToCache);
+          //   });
+          return response;
+        });
+      }).catch(error => {
+        console.error('Service Worker: Fetch failed; returning offline page instead.', error);
+        // Optionally, return a fallback offline page
+        // return caches.match('/offline.html');
       })
   );
 });
 
 self.addEventListener('activate', (event) => {
-  // Supprimer les anciens caches s'il y en a
+  console.log('Service Worker: Activate event in progress.');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Service Worker: Deleting old cache', cacheName);
-            return caches.delete(cacheName);
-          }
+        cacheNames.filter((cacheName) => {
+          // Return true if you want to remove this cache,
+          // but we'll keep it simple and not remove caches in this example.
+          return cacheName !== CACHE_NAME;
+        }).map(cacheName => {
+          console.log('Service Worker: Removing old cache:', cacheName);
+          return caches.delete(cacheName);
         })
       );
+    }).then(() => {
+      console.log('Service Worker: Activate completed.');
+      return self.clients.claim();
     })
-  );
-  return self.clients.claim();
-});
-
-self.addEventListener('fetch', (event) => {
-  // Ne pas intercepter les requêtes non-GET ou vers /_next/static/development/ (HMR)
-  if (event.request.method !== 'GET' || event.request.url.includes('/_next/static/development/')) {
-    event.respondWith(fetch(event.request));
-    return;
-  }
-
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
-        // Pas dans le cache, donc requête réseau
-        return fetch(event.request).then(
-          (networkResponse) => {
-            // Vérifier si nous avons reçu une réponse valide
-            if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
-              return networkResponse;
-            }
-
-            // Important: Cloner la réponse. Une réponse est un flux et ne peut être consommée qu'une seule fois.
-            // Nous devons cloner pour en mettre une copie dans le cache et une autre pour le navigateur.
-            const responseToCache = networkResponse.clone();
-
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
-
-            return networkResponse;
-          }
-        );
-      })
-      .catch(() => {
-        // Si la requête réseau échoue aussi (ex: hors ligne), 
-        // et que la ressource n'est pas dans le cache, on pourrait retourner une page hors-ligne générique.
-        // Pour l'instant, on laisse l'erreur se propager.
-        console.warn('Service Worker: Fetch failed for', event.request.url);
-        // Optionnel: retourner une page fallback offline si /offline.html est mis en cache.
-        // return caches.match('/offline.html'); 
-      })
   );
 });
