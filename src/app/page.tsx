@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { WordChip } from '@/components/game/WordChip';
 import { FireworksAnimation } from '@/components/animations/FireworksAnimation';
 import { Progress } from "@/components/ui/progress";
-import { Star, Brain, MessageCircleQuestion, Loader2, RefreshCw, SparklesIcon as SparklesLucide } from 'lucide-react';
+import { Brain, MessageCircleQuestion, Loader2, RefreshCw, SparklesIcon as SparklesLucide } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type GameStatus =
@@ -425,7 +425,14 @@ export default function PetitAdamPage() {
             "transition-transform duration-300 ease-in-out",
             isScoreAnimating && "scale-110"
           )}>
-            <Star className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-yellow-300" />
+            <Image 
+              src="/images/coin.png"
+              alt="Coin"
+              width={24} 
+              height={24}
+              className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8"
+              data-ai-hint="coin money"
+            />
             <span className="ml-1 sm:ml-2 text-xl sm:text-2xl md:text-3xl font-bold">{score}</span>
           </div>
         </div>
