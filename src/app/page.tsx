@@ -33,7 +33,7 @@ export default function HomePage() {
         </p>
 
         <div className="grid grid-cols-1 gap-6">
-          <Link href="/games/verb-subject-finder" passHref>
+          <Link href={`${pathPrefix}/games/verb-subject-finder`} passHref>
             <Card className="hover:shadow-xl transition-shadow duration-300 cursor-pointer bg-card/80 backdrop-blur-sm">
               <CardHeader>
                 <div className="flex items-center justify-center mb-4">
@@ -46,7 +46,7 @@ export default function HomePage() {
                     data-ai-hint="notebook pencil"
                   />
                 </div>
-                <CardTitle className="text-2xl font-semibold text-primary-foreground text-center font-question">
+                <CardTitle className="text-2xl font-semibold text-primary text-center font-question">
                   Trouve le Verbe et le Sujet
                 </CardTitle>
               </CardHeader>
