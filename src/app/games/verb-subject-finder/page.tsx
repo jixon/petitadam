@@ -3,12 +3,13 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { WordChip } from '@/components/game/WordChip';
 import { FireworksAnimation } from '@/components/animations/FireworksAnimation';
 import { Progress } from "@/components/ui/progress";
-import { Brain, MessageCircleQuestion, Loader2, RefreshCw, SparklesIcon as SparklesLucide, Info, XCircle } from 'lucide-react';
+import { Brain, MessageCircleQuestion, Loader2, RefreshCw, SparklesIcon as SparklesLucide, Info, XCircle, Home } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Dialog,
@@ -483,15 +484,22 @@ export default function VerbSubjectFinderPage() {
       {showFireworks && <FireworksAnimation />}
       
       <header className="w-full flex justify-between items-center mb-6 md:mb-10">
-        <Image
-          src={`${pathPrefix}/images/petit-adam-logo.png`} 
-          alt="Petit Adam Logo"
-          width={150} 
-          height={118} 
-          className="drop-shadow-md sm:w-[180px] md:w-[200px]" 
-          data-ai-hint="child drawing"
-          priority
-        />
+        <div className="flex items-center">
+          <Link href={`${pathPrefix}/`} passHref>
+            <Button variant="ghost" size="icon" aria-label="Retour à l'accueil" className="mr-2 sm:mr-4">
+              <Home className="h-5 w-5 sm:h-6 sm:h-6" />
+            </Button>
+          </Link>
+          <Image
+            src={`${pathPrefix}/images/petit-adam-logo.png`} 
+            alt="Petit Adam Logo"
+            width={150} 
+            height={118} 
+            className="drop-shadow-md sm:w-[180px] md:w-[200px]" 
+            data-ai-hint="child drawing"
+            priority
+          />
+        </div>
         <Button
             variant="outline"
             onClick={() => setIsStatsDialogOpen(true)}
@@ -599,7 +607,7 @@ export default function VerbSubjectFinderPage() {
             </div>
             {(status === 'asking_verb' || status === 'asking_subject' || status === 'feedback_incorrect_verb' || status === 'feedback_incorrect_subject') && (
               <>
-                 <div className="flex items-center mt-2 text-xs sm:text-sm text-muted-foreground">
+                <div className="flex items-center mt-4 text-xs sm:text-sm text-muted-foreground">
                   <Info className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   <span>Appuyer sur un ou plusieurs mots pour les sélectionner.</span>
                 </div>
@@ -676,3 +684,4 @@ export default function VerbSubjectFinderPage() {
     </div>
   );
 }
+
