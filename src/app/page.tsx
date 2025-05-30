@@ -606,7 +606,7 @@ export default function PetitAdamPage() {
                   variant="link"
                   className="mt-3 sm:mt-4 text-muted-foreground text-xs sm:text-sm"
                   onClick={() => {
-                    if (status !== 'loading' && status !== 'initial_loading' && allSentences.length > 0) {
+                    if (allSentences.length > 0) {
                       setSelectedIndices([]); 
                       fetchNewSentence();
                     }
