@@ -1,24 +1,23 @@
-
 {
-  "name": "Petit Adam (apprendre avec adam)",
+  "name": "Petit Adam - Apprendre le Français",
   "short_name": "Petit Adam",
   "description": "Apprendre le français avec Adam : les verbes et les sujets en s'amusant !",
-  "start_url": ".",
-  "display": "standalone",
-  "background_color": "#C7E2F3",
-  "theme_color": "#63B5FF",
   "icons": [
     {
-      "src": "./images/petit-adam-logo.png",
-      "sizes": "192x192",
+      "src": "images/petit-adam-logo.png",
+      "sizes": "250x197",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "./images/petit-adam-logo.png",
+      "src": "images/petit-adam-logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#63B5FF",
+  "background_color": "#C7E2F3"
 }
