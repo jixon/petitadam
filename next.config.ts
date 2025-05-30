@@ -1,11 +1,10 @@
 
 import type {NextConfig} from 'next';
 
-const nextConfig: NextConfig = {
+const isGithubActions = process.env.GITHUB_ACTIONS === 'true';
+
+let nextConfig: NextConfig = {
   /* config options here */
-  // basePath: '/petitadam', // Reverted
-  // assetPrefix: '/petitadam', // Reverted
-  // output: 'export', // Reverted
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -27,5 +26,16 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
 };
+
+if (isGithubActions) {
+  const repoName = process.env.GITHUB_REPOSITORY?.split('/')[1] || 'petitadam';
+  
+  nextConfig = {
+    ...nextConfig,
+    basePath: `/${repoName}`,
+    assetPrefix: `/${repoName}/`,
+    output: 'export',
+  };
+}
 
 export default nextConfig;
