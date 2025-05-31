@@ -23,22 +23,20 @@ let nextConfig: NextConfig = {
       },
     ],
     // Required for static export with next/image
-    // This can remain true as it doesn't harm SSR/hybrid deployments
-    // and is beneficial if you ever do static exports for other purposes.
     unoptimized: true,
   },
   env: {
     NEXT_PUBLIC_BASE_PATH: effectiveBasePath, // Expose it to the client
   },
+  // Ensure trailing slashes for all routes. This helps with static export
+  // compatibility on platforms like GitHub Pages, by generating /path/to/page/index.html
+  // instead of /path/to/page.html.
+  trailingSlash: true,
 };
 
 if (isGithubActions) {
   nextConfig.basePath = effectiveBasePath; // e.g., "/petitadam"
-  // assetPrefix for Next.js's own assets (JS, CSS chunks) needs a trailing slash if basePath doesn't cover it fully
-  // However, for GitHub pages, if basePath is /repo, assetPrefix is usually also /repo.
-  // Next.js usually handles its internal paths correctly with basePath.
-  // Let's set assetPrefix to effectiveBasePath for consistency with common GitHub Pages setups.
-  // If basePath is /petitadam, Next.js will request its assets from /petitadam/_next/...
+  // assetPrefix for Next.js's own assets (JS, CSS chunks)
   nextConfig.assetPrefix = effectiveBasePath; 
   nextConfig.output = 'export';
 }
