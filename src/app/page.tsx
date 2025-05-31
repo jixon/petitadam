@@ -33,7 +33,7 @@ export default function HomePage() {
         </p>
 
         <div className="grid grid-cols-1 gap-6">
-          <Link href={`${pathPrefix}/games/verb-subject-finder`} passHref>
+          <Link href={`${pathPrefix}/games/verb-subject-finder/`} passHref>
             <Card className="group hover:shadow-xl transition-shadow duration-300 cursor-pointer bg-card/80 backdrop-blur-sm">
               <CardHeader className="px-6 pt-6 pb-2">
                 <div className="flex items-center justify-center mb-4 transition-all duration-300 group-hover:[filter:drop-shadow(0_0_0.75rem_hsl(var(--primary)))] [filter:drop-shadow(0_0_0.4rem_hsl(var(--primary)))]">
