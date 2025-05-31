@@ -4,7 +4,7 @@ import type {NextConfig} from 'next';
 const isGithubActions = process.env.GITHUB_ACTIONS === 'true';
 const repoName = process.env.GITHUB_REPOSITORY?.split('/')[1] || 'petitadam';
 // effectiveBasePath will be like "/petitadam" (no trailing slash for env var)
-const effectiveBasePath = isGithubActions ? `/${repoName}` : ''; 
+const effectiveBasePath = isGithubActions ? `/${repoName}` : '';
 
 let nextConfig: NextConfig = {
   typescript: {
@@ -32,12 +32,16 @@ let nextConfig: NextConfig = {
   // compatibility on platforms like GitHub Pages, by generating /path/to/page/index.html
   // instead of /path/to/page.html.
   trailingSlash: true,
+  allowedDevOrigins: [
+    'https://6000-firebase-studio-1748549457777.cluster-pgviq6mvsncnqxx6kr7pbz65v6.cloudworkstations.dev',
+    'https://9000-firebase-studio-1748549457777.cluster-pgviq6mvsncnqxx6kr7pbz65v6.cloudworkstations.dev',
+  ],
 };
 
 if (isGithubActions) {
   nextConfig.basePath = effectiveBasePath; // e.g., "/petitadam"
   // assetPrefix for Next.js's own assets (JS, CSS chunks)
-  nextConfig.assetPrefix = effectiveBasePath; 
+  nextConfig.assetPrefix = effectiveBasePath;
   nextConfig.output = 'export';
 }
 
